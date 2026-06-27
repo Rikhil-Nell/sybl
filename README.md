@@ -46,6 +46,35 @@ Configure models in `config.toml`:
 
 Provider fallback order is configurable under `[provider]` (`preferred`, `fallback_order`).
 
+## Global hotkeys (Phase 4)
+
+Start the daemon and dictate from anywhere with push-to-talk:
+
+```powershell
+uv run navi config set-key groq
+uv run navi start
+```
+
+Hold `ctrl+alt+space` (default binding), speak, release to transcribe. Press
+`Esc` while holding to cancel. Transcripts are logged to the Navi log file until
+Phase 5 text injection.
+
+The default avoids `ctrl+shift+space`, which Windows Terminal uses for a new
+window. Change `binding` under `[hotkey]` in `config.toml` if you prefer something else.
+
+Test bindings without STT:
+
+```powershell
+uv run navi hotkey test
+```
+
+Configure under `[hotkey]` in `config.toml`:
+
+- `binding` — default `ctrl+alt+space` (not `ctrl+shift+space`; that opens a new Windows Terminal window)
+- `cancel_binding` — default `esc`
+- `streaming` — `auto`, `on`, or `off` (auto streams when the resolved provider supports it)
+- `min_duration_ms` — skip accidental taps shorter than this
+
 Optional: run the full test suite (excludes mic hardware and live API tests):
 
 ```powershell

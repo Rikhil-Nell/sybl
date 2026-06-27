@@ -59,7 +59,14 @@ def run_checks() -> list[CheckResult]:
         )
     )
 
-    for package in ("typer", "pydantic", "keyring", "platformdirs", "sounddevice"):
+    for package in (
+        "typer",
+        "pydantic",
+        "keyring",
+        "platformdirs",
+        "sounddevice",
+        "pynput",
+    ):
         try:
             importlib.import_module(package)
             results.append(
@@ -148,6 +155,7 @@ def run_checks() -> list[CheckResult]:
             )
 
         results.extend(_check_providers(config))
+        results.extend(_check_hotkeys(config))
 
     results.extend(_check_audio())
 
@@ -172,6 +180,61 @@ def _check_providers(_config) -> list[CheckResult]:
                 f"{streaming}, {partials}, {key_status}",
             )
         )
+    return results
+
+
+def _check_hotkeys(config) -> list[CheckResult]:
+    import sys
+
+    from navi.hotkeys.bindings import BindingParseError, parse_binding
+
+    results: list[CheckResult] = []
+
+    if sys.platform != "win32":
+        results.append(
+            CheckResult(
+                "Global hotkeys",
+                CheckStatus.WARN,
+                "Windows-only in Phase 4",
+            )
+        )
+
+    try:
+        binding = parse_binding(config.hotkey.binding)
+        results.append(
+            CheckResult(
+                "Hotkey binding",
+                CheckStatus.PASS,
+                f"{config.hotkey.binding} -> {', '.join(binding.tokens)}",
+            )
+        )
+    except BindingParseError as exc:
+        results.append(
+            CheckResult(
+                "Hotkey binding",
+                CheckStatus.FAIL,
+                str(exc),
+            )
+        )
+
+    try:
+        cancel = parse_binding(config.hotkey.cancel_binding)
+        results.append(
+            CheckResult(
+                "Cancel binding",
+                CheckStatus.PASS,
+                f"{config.hotkey.cancel_binding} -> {', '.join(cancel.tokens)}",
+            )
+        )
+    except BindingParseError as exc:
+        results.append(
+            CheckResult(
+                "Cancel binding",
+                CheckStatus.FAIL,
+                str(exc),
+            )
+        )
+
     return results
 
 

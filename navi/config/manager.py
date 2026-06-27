@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import tomllib
 from pathlib import Path
 from typing import Any
@@ -10,6 +11,12 @@ import tomli_w
 
 from navi.config.models import NaviConfig
 from navi.config.paths import config_path
+from navi.hotkeys.bindings import BindingParseError, parse_binding
+
+logger = logging.getLogger("navi.config")
+
+_LEGACY_HOTKEY_BINDING = "ctrl+shift+space"
+_CURRENT_HOTKEY_BINDING = "ctrl+alt+space"
 
 
 class ConfigError(Exception):
@@ -35,9 +42,21 @@ class ConfigManager:
             raise ConfigError(f"Invalid TOML in {self._path}: {exc}") from exc
 
         try:
-            return NaviConfig.model_validate(data)
+            config = NaviConfig.model_validate(data)
         except Exception as exc:
             raise ConfigError(f"Invalid configuration in {self._path}: {exc}") from exc
+
+        migrated = _migrate_legacy_hotkey_binding(config)
+        if migrated is not config:
+            self.save(migrated)
+            logger.info(
+                "Updated hotkey binding from %s to %s (Windows Terminal conflict)",
+                _LEGACY_HOTKEY_BINDING,
+                _CURRENT_HOTKEY_BINDING,
+            )
+            return migrated
+
+        return config
 
     def save(self, config: NaviConfig) -> None:
         self._path.parent.mkdir(parents=True, exist_ok=True)
@@ -49,6 +68,25 @@ class ConfigManager:
         config = NaviConfig()
         self.save(config)
         return config
+
+
+def _migrate_legacy_hotkey_binding(config: NaviConfig) -> NaviConfig:
+    """Upgrade the old default binding that conflicts with Windows Terminal."""
+    try:
+        normalized = "+".join(parse_binding(config.hotkey.binding).tokens)
+    except BindingParseError:
+        return config
+
+    if normalized != _LEGACY_HOTKEY_BINDING:
+        return config
+
+    return config.model_copy(
+        update={
+            "hotkey": config.hotkey.model_copy(
+                update={"binding": _CURRENT_HOTKEY_BINDING}
+            )
+        }
+    )
 
 
 def _prepare_for_toml(value: Any) -> Any:

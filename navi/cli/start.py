@@ -1,15 +1,18 @@
-"""`navi start` — minimal daemon skeleton."""
+"""`navi start` — daemon with global hotkey dictation."""
 
 from __future__ import annotations
 
 import asyncio
 import logging
 import signal
+import sys
 
 import typer
 
 from navi import __version__
 from navi.config import ConfigManager, log_path
+from navi.core.dictation import DictationController
+from navi.hotkeys import create_hotkey_manager
 from navi.logging import setup_logging
 from navi.secrets import list_configured_providers
 
@@ -21,7 +24,7 @@ def register(app: typer.Typer) -> None:
     def start_command(
         ctx: typer.Context,
     ) -> None:
-        """Start the Navi daemon (skeleton — hotkeys/audio arrive in later phases)."""
+        """Start the Navi daemon with global push-to-talk dictation."""
         verbose = bool(ctx.obj and ctx.obj.get("verbose"))
         config_manager = ConfigManager()
         config = config_manager.load()
@@ -37,12 +40,29 @@ def register(app: typer.Typer) -> None:
             else "(none — use `navi config set-key`)"
         )
         typer.echo(f"Configured providers: {providers_msg}")
-        typer.echo("Daemon skeleton running. Press Ctrl+C to stop.")
+        typer.echo(
+            f"Hotkey: {config.hotkey.binding} ({config.hotkey.mode}) — "
+            "hold to dictate, release to transcribe"
+        )
+        typer.echo(f"Cancel: {config.hotkey.cancel_binding}")
+        typer.echo(
+            "Transcripts are logged until Phase 5 text injection. Press Ctrl+C to stop."
+        )
 
-        asyncio.run(_run_daemon())
+        if sys.platform != "win32":
+            typer.echo(
+                "Warning: global hotkeys are Windows-only in Phase 4.",
+                err=True,
+            )
+
+        try:
+            asyncio.run(_run_daemon(config, verbose=verbose))
+        except NotImplementedError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(code=1) from exc
 
 
-async def _run_daemon() -> None:
+async def _run_daemon(config, *, verbose: bool) -> None:
     stop_event = asyncio.Event()
     loop = asyncio.get_running_loop()
 
@@ -54,15 +74,17 @@ async def _run_daemon() -> None:
         try:
             loop.add_signal_handler(sig, _request_stop)
         except NotImplementedError:
-            # Windows ProactorEventLoop does not support add_signal_handler.
             signal.signal(sig, lambda _signum, _frame: _request_stop())
 
+    controller = DictationController(config, verbose=verbose)
+    hotkeys = create_hotkey_manager(config.hotkey)
+
+    await hotkeys.start(controller.handle_hotkey_event)
     logger.info("Navi daemon started")
 
-    while not stop_event.is_set():
-        try:
-            await asyncio.wait_for(stop_event.wait(), timeout=30.0)
-        except TimeoutError:
-            logger.info("Heartbeat — daemon idle (Phase 0 skeleton)")
-
-    logger.info("Navi daemon stopped")
+    try:
+        await stop_event.wait()
+    finally:
+        await controller.shutdown()
+        await hotkeys.stop()
+        logger.info("Navi daemon stopped")

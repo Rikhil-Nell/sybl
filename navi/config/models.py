@@ -1,5 +1,7 @@
 """Pydantic configuration models."""
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -26,7 +28,12 @@ class ProviderConfig(BaseModel):
 
 
 class HotkeyConfig(BaseModel):
-    binding: str = "ctrl+shift+space"
+    # ctrl+shift+space conflicts with Windows Terminal (new window); alt avoids that.
+    binding: str = "ctrl+alt+space"
+    mode: Literal["ptt"] = "ptt"
+    cancel_binding: str = "esc"
+    streaming: Literal["auto", "on", "off"] = "auto"
+    min_duration_ms: int = 250
 
 
 class AudioConfig(BaseModel):

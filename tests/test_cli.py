@@ -57,3 +57,15 @@ def test_transcribe_help() -> None:
     assert "transcribe" in result.stdout.lower()
     assert "--seconds" in result.stdout
     assert "--stream" in result.stdout
+
+
+def test_hotkey_help() -> None:
+    result = runner.invoke(app, ["hotkey", "--help"])
+    assert result.exit_code == 0
+    assert "test" in result.stdout.lower()
+
+
+def test_hotkey_test_help() -> None:
+    result = runner.invoke(app, ["hotkey", "test", "--help"])
+    assert result.exit_code == 0
+    assert "activate" in result.stdout.lower()

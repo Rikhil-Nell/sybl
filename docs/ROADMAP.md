@@ -117,13 +117,13 @@ is secondary and harder to get right.
 > (Rust `global-hotkey` crate is the usual choice). Do **not** use the `keyboard`
 > library (Windows security warnings, macOS root requirements).
 
-- [ ] `HotkeyManager` interface + `pynput` implementation (configurable binding).
-- [ ] **Push-to-talk (primary):** hold to record, release to finish.
+- [x] `HotkeyManager` interface + `pynput` implementation (configurable binding).
+- [x] **Push-to-talk (primary):** hold to record, release to finish.
 - [ ] **Double-press toggle (secondary):** start constant recording; press again
       to stop — ship after PTT is solid; debounce/timing will need tuning.
-- [ ] Cancel gesture (e.g. Esc) to discard the in-flight capture.
-- [ ] Capture focused window/target at **hotkey press**, not at injection time.
-- [ ] Windows implementation first; macOS (Accessibility permissions) and Linux
+- [x] Cancel gesture (e.g. Esc) to discard the in-flight capture.
+- [x] Capture focused window/target at **hotkey press**, not at injection time.
+- [x] Windows implementation first; macOS (Accessibility permissions) and Linux
       (X11 vs Wayland limits) later behind the same interface.
 - [ ] **Escape hatch:** native hotkey helper if `pynput` misses events under load.
 

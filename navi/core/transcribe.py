@@ -35,16 +35,20 @@ async def transcribe_pcm(
     provider_name: str | None = None,
     audio_duration_seconds: float = 0.0,
     peak_dbfs: float = 0.0,
+    state: StateMachine | None = None,
 ) -> TranscribeOutcome:
     """Send captured PCM to the configured STT provider."""
+    owns_state = state is None
+    sm = state or StateMachine()
+    if owns_state:
+        sm.transition(SessionState.LISTENING)
+        sm.transition(SessionState.PROCESSING)
+
     provider_id, provider = resolve_provider(
         config,
         prefer=provider_name,
         streaming_required=False,
     )
-    state = StateMachine()
-    state.transition(SessionState.LISTENING)
-    state.transition(SessionState.PROCESSING)
 
     model = _provider_model(config, provider_id)
     start = time.monotonic()
@@ -52,11 +56,13 @@ async def transcribe_pcm(
     try:
         text = await _collect_final_text(provider.transcribe(pcm))
     except STTError:
-        state.transition(SessionState.ERROR)
+        if sm.state == SessionState.PROCESSING:
+            sm.transition(SessionState.ERROR)
         raise
 
     latency = time.monotonic() - start
-    state.transition(SessionState.IDLE)
+    if sm.state == SessionState.PROCESSING:
+        sm.transition(SessionState.IDLE)
 
     return TranscribeOutcome(
         text=text,
@@ -78,17 +84,21 @@ async def transcribe_stream(
     on_partial: Callable[[str], None] | None = None,
     audio_duration_seconds: float = 0.0,
     peak_dbfs: float = 0.0,
+    state: StateMachine | None = None,
 ) -> TranscribeOutcome:
     """Stream PCM chunks from an active session to a streaming STT provider."""
+    owns_state = state is None
+    sm = state or StateMachine()
+    if owns_state:
+        sm.transition(SessionState.LISTENING)
+        sm.transition(SessionState.PROCESSING)
+
     if provider is None or provider_id is None:
         provider_id, provider = resolve_provider(
             config,
             prefer=provider_name,
             streaming_required=True,
         )
-    state = StateMachine()
-    state.transition(SessionState.LISTENING)
-    state.transition(SessionState.PROCESSING)
 
     model = _provider_model(config, provider_id)
     start = time.monotonic()
@@ -103,11 +113,13 @@ async def transcribe_stream(
             on_partial=on_partial,
         )
     except STTError:
-        state.transition(SessionState.ERROR)
+        if sm.state in {SessionState.LISTENING, SessionState.PROCESSING}:
+            sm.transition(SessionState.ERROR)
         raise
 
     latency = time.monotonic() - start
-    state.transition(SessionState.IDLE)
+    if sm.state == SessionState.PROCESSING:
+        sm.transition(SessionState.IDLE)
 
     return TranscribeOutcome(
         text=text,

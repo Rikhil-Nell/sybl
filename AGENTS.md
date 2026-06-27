@@ -1,7 +1,7 @@
 # AGENTS.md
 
 > Living source of truth for the Navi project. Read this first. Keep it current.
-> Last updated: 2026-06-26 (Phase 3 complete)
+> Last updated: 2026-06-26 (Phase 4 complete)
 
 ---
 
@@ -46,19 +46,21 @@ The guiding principles:
 
 > Update this section every time the project's reality changes.
 
-- **Phase:** Phase 3 complete — Deepgram streaming + ProviderManager; Phase 4 (hotkeys) is next.
+- **Phase:** Phase 4 complete — global PTT hotkeys on Windows; Phase 5 (text injection) is next.
 - **Code:** `navi/audio/` implements `AudioCaptureSession` (sounddevice callback →
   asyncio queue, 16 kHz mono int16, resampling, dBFS peak metering, debug WAV save).
   `navi/providers/` implements streaming-first STT interface, `ProviderCapabilities`,
   `resolve_provider` session-start selection, `GroqProvider` (batch), and
   `DeepgramProvider` (WebSocket `/v1/listen` streaming + REST batch via official SDK).
-  `navi/core/` has `StateMachine`, `transcribe_pcm`, and `transcribe_stream`. CLI:
-  `navi audio devices/record`, `navi transcribe` (batch + `--stream` partials).
-  Stub modules remain for hotkeys/inject/tui. `navi start` still runs the Phase 0
-  daemon skeleton.
+  `navi/hotkeys/` implements `HotkeyManager`, binding parser, Windows `pynput` PTT
+  backend, and focus capture at activation. `navi/core/` has `StateMachine`,
+  `DictationController`, `transcribe_pcm`, and `transcribe_stream`. CLI:
+  `navi audio devices/record`, `navi transcribe` (batch + `--stream` partials),
+  `navi hotkey test`, and `navi start` (hotkey-driven daemon — logs transcripts until
+  Phase 5 injection). Stub modules remain for inject/tui.
 - **Stack pinned:** `typer`, `pydantic`, `platformdirs`, `keyring`, `tomli-w`,
-  `sounddevice`, `numpy`, `soundfile`, `soxr`, `groq`, `tenacity`, `deepgram-sdk`;
-  dev: `ruff`, `pytest`, `pytest-asyncio`.
+  `sounddevice`, `numpy`, `soundfile`, `soxr`, `groq`, `tenacity`, `deepgram-sdk`,
+  `pynput`; dev: `ruff`, `pytest`, `pytest-asyncio`.
 - **Primary platform:** Windows first (dev machine). Code stays cross-platform
   behind interfaces, but the core loop is proven on Windows before expanding.
 - **Open questions:** popup rendering mechanism; per-platform text-injection
@@ -94,8 +96,9 @@ The guiding principles:
 | Signal metering | **RMS level** for UI now; proper **VAD later** | RMS feeds the popup/TUI meter; `webrtcvad` or `silero-vad` when we need to avoid cutting off speech or trailing silence. |
 | Core concerns | State machine + post-processing pipeline are **first-class from early on** | They sit at the center of UX and the core text path; easier to refine while surrounding plumbing is still simple. |
 | Secrets | OS keyring via `navi.secrets` | Keep API keys out of plaintext config; `navi config set-key`. |
-| CLI | Typer subcommands | `start`, `tui` (stub), `config`, `doctor`, `audio`, `transcribe`. |
+| CLI | Typer subcommands | `start`, `tui` (stub), `config`, `doctor`, `audio`, `transcribe`, `hotkey`. |
 | Logging | File + console + ring buffer | `navi.logging.setup_logging`; ring buffer for future TUI tail. |
+| Phase 4 hotkeys | **PTT-first** via `pynput` behind `HotkeyManager`; focus captured at **activation press** | Reliability anchor before toggle mode; HWND stored for Phase 5 injection; Windows-only MVP. |
 
 High-level component map:
 
@@ -140,10 +143,13 @@ Navi/
 ├── tests/
 │   ├── conftest.py
 │   ├── test_audio.py
+│   ├── test_bindings.py
 │   ├── test_cli.py
 │   ├── test_config.py
 │   ├── test_deepgram.py
+│   ├── test_dictation.py
 │   ├── test_doctor.py
+│   ├── test_hotkeys.py
 │   ├── test_logging.py
 │   ├── test_manager.py
 │   ├── test_providers.py
@@ -152,14 +158,14 @@ Navi/
 └── navi/
     ├── __init__.py
     ├── __main__.py
-    ├── cli/               # start, tui, config, doctor, audio, transcribe
+    ├── cli/               # start, tui, config, doctor, audio, transcribe, hotkey
     ├── config/            # Pydantic models, paths, ConfigManager
     ├── secrets/           # keyring wrapper
     ├── logging/           # setup + RingBufferHandler
     ├── audio/             # capture session, devices, resample, metering
-    ├── core/              # state machine, transcribe pipeline
+    ├── core/              # state machine, dictation controller, transcribe pipeline
     ├── providers/         # STT interface, capabilities, manager, Groq, Deepgram
-    ├── hotkeys/           # stub — Phase 4
+    ├── hotkeys/           # HotkeyManager, bindings, pynput backend, focus capture
     ├── inject/            # stub — Phase 5
     └── tui/               # stub — Phase 7
 ```
