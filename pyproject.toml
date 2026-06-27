@@ -1,0 +1,49 @@
+[project]
+name = "navi"
+version = "0.1.0"
+description = "Open-source BYOK voice dictation — speak anywhere, transcribe fast, type it in."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "keyring>=25.0.0",
+    "numpy>=2.0.0",
+    "platformdirs>=4.0.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "sounddevice>=0.5.0",
+    "soundfile>=0.12.0",
+    "soxr>=0.5.0",
+    "tomli-w>=1.0.0",
+    "typer>=0.12.0",
+]
+
+[project.scripts]
+navi = "navi.cli:app"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+    "ruff>=0.8.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["navi"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+markers = [
+    "integration: tests that require real microphone hardware",
+]

@@ -1,0 +1,34 @@
+---
+description: Keep AGENTS.md as the living source of truth; read it first and update it whenever project reality changes.
+alwaysApply: true
+---
+
+# Maintain AGENTS.md
+
+`AGENTS.md` at the repo root is the living source of truth for the Navi project
+(mission, product spec, current state, architecture decisions, structure,
+conventions).
+
+## At the start of a task
+- Read `AGENTS.md` before planning or making changes so your work aligns with
+  the current mission, decisions, and conventions.
+
+## During / after a task — update `AGENTS.md` when you:
+- Change the mission, scope, or product behavior → update the Mission / Product
+  Spec sections.
+- Advance the project phase or status → update the Current State section and
+  `docs/ROADMAP.md`.
+- Make or reverse a technical/architecture decision → append a row/note to the
+  Architecture & Tech Decisions log (append, don't erase history).
+- Add, move, or remove top-level files/directories → update the Project
+  Structure section.
+- Establish or change a convention → update the Conventions section.
+
+## Rules
+1. Bump the `Last updated` date at the top of `AGENTS.md` whenever you edit it.
+2. Append to the decision log rather than deleting prior decisions; if a
+   decision changes, add a new entry explaining the change.
+3. Keep `AGENTS.md` concise — it is a map. Put depth in `docs/`.
+4. If reality and `AGENTS.md` disagree, fix `AGENTS.md`.
+5. Before ending a turn that changed the project, verify `AGENTS.md` is still
+   accurate and update it if anything went stale.
