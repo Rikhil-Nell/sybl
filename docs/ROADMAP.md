@@ -71,23 +71,24 @@ Goal: a clean, **streaming-first** pluggable interface, with text coming back
 end to end. Designing for streaming now avoids reworking the interface later when
 batch turns out to be the easy/degenerate case.
 
-- [ ] Define the `Provider` interface **streaming-first**, **async from day one**:
+- [x] Define the `Provider` interface **streaming-first**, **async from day one**:
       `async def transcribe(audio: bytes | AsyncIterable[bytes]) ->
       AsyncGenerator[TranscriptionResult, None]` where `TranscriptionResult`
       carries `text`, `is_final`, and optional `confidence`. Batch Groq is the
       degenerate "buffer-all-then-send-once" case.
-- [ ] Sketch the **state machine module** now (idle → listening → processing →
+- [x] Sketch the **state machine module** now (idle → listening → processing →
       injecting, + cancelled/error) even before the daemon wraps it — the rest of
       the pipeline plugs into it.
-- [ ] Provider registry; per-provider key from keyring
+- [x] Provider registry; per-provider key from keyring
       (`keyring.get_password("navi", "groq_api_key")`, etc.).
-- [ ] **First signal — Groq (Whisper large-v3), batch:** fastest path to "record
+- [x] **First signal — Groq (Whisper), batch:** fastest path to "record
       → get text in the terminal", implemented behind the streaming interface.
-      Make model id configurable (`whisper-large-v3` vs `whisper-large-v3-turbo`).
-- [ ] Custom STT exception hierarchy + **`tenacity`** retries for transient
+      Model id configurable (`whisper-large-v3` vs `whisper-large-v3-turbo`;
+      default turbo for dictation speed).
+- [x] Custom STT exception hierarchy + **`tenacity`** retries for transient
       failures (rate limits, network blips); fatal errors (bad key, bad format)
       fail fast.
-- [ ] **Milestone:** record audio → transcribe via Groq → print clean text +
+- [x] **Milestone:** record audio → transcribe via Groq → print clean text +
       basic metadata (provider, duration) in the terminal.
 
 ## Phase 3 — Reference Streaming Provider + the Rest

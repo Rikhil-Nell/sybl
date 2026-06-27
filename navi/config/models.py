@@ -3,9 +3,17 @@
 from pydantic import BaseModel, Field
 
 
+class GroqConfig(BaseModel):
+    model: str = "whisper-large-v3-turbo"
+    language: str | None = None
+    prompt: str | None = None
+    temperature: float = 0.0
+
+
 class ProviderConfig(BaseModel):
     preferred: str = "groq"
     fallback_order: list[str] = Field(default_factory=lambda: ["groq"])
+    groq: GroqConfig = Field(default_factory=GroqConfig)
 
 
 class HotkeyConfig(BaseModel):

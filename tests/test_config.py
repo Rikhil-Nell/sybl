@@ -10,6 +10,7 @@ from navi.config import ConfigError, ConfigManager, NaviConfig
 def test_defaults_validate() -> None:
     config = NaviConfig()
     assert config.provider.preferred == "groq"
+    assert config.provider.groq.model == "whisper-large-v3-turbo"
     assert config.audio.sample_rate == 16000
     assert config.audio.block_duration_ms == 20
     assert config.audio.save_last_recording is True

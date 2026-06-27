@@ -1,7 +1,7 @@
 # AGENTS.md
 
 > Living source of truth for the Navi project. Read this first. Keep it current.
-> Last updated: 2026-06-26 (Phase 1 complete)
+> Last updated: 2026-06-26 (Phase 2 complete)
 
 ---
 
@@ -46,14 +46,17 @@ The guiding principles:
 
 > Update this section every time the project's reality changes.
 
-- **Phase:** Phase 1 complete — audio capture pipeline works; Phase 2 (STT) is next.
+- **Phase:** Phase 2 complete — STT provider abstraction + Groq batch works; Phase 3 (Deepgram streaming) is next.
 - **Code:** `navi/audio/` implements `AudioCaptureSession` (sounddevice callback →
   asyncio queue, 16 kHz mono int16, resampling, dBFS peak metering, debug WAV save).
-  CLI: `navi audio devices` (WASAPI-only filter on Windows), `navi audio record`
-  (live dBFS meter). Debug WAVs land in `debug recording/`. Stub modules remain for
-  providers/hotkeys/inject/tui/core. `navi start` still runs the Phase 0 daemon skeleton.
+  `navi/providers/` implements streaming-first STT interface, registry, and
+  `GroqProvider` (official SDK, batch degenerate streaming via in-memory WAV upload).
+  `navi/core/` has `StateMachine` and `transcribe_pcm` pipeline. CLI: `navi audio
+  devices/record`, `navi transcribe` (record + Groq). Stub modules remain for
+  hotkeys/inject/tui. `navi start` still runs the Phase 0 daemon skeleton.
 - **Stack pinned:** `typer`, `pydantic`, `platformdirs`, `keyring`, `tomli-w`,
-  `sounddevice`, `numpy`, `soundfile`, `soxr`; dev: `ruff`, `pytest`, `pytest-asyncio`.
+  `sounddevice`, `numpy`, `soundfile`, `soxr`, `groq`, `tenacity`; dev: `ruff`,
+  `pytest`, `pytest-asyncio`.
 - **Primary platform:** Windows first (dev machine). Code stays cross-platform
   behind interfaces, but the core loop is proven on Windows before expanding.
 - **Open questions:** popup rendering mechanism; per-platform text-injection
@@ -74,7 +77,8 @@ The guiding principles:
 | Daemon concurrency | **`asyncio` event loop** + dedicated audio thread | Daemon/TUI/async providers run on asyncio; sounddevice callback thread only enqueues chunks. |
 | Global hotkeys | `pynput` for **MVP**, behind `HotkeyManager` interface | Fast to ship on Windows; plan migration to a small **native helper** (e.g. Rust `global-hotkey`) if reliability stalls. Avoid the `keyboard` library (security/root issues). |
 | STT providers | Pluggable, **streaming-first** interface | Core BYOK requirement; designing for streaming up front avoids rework when batch is the easy case. |
-| Reference provider | **Deepgram** (streaming) as reference; **Groq Whisper large-v3** (batch) as early sanity check | Deepgram's streaming is fast/feature-rich and makes the cleanest reference; Groq gives the fastest first end-to-end signal as a degenerate batch case behind the same interface. |
+| Reference provider | **Deepgram** (streaming) as reference; **Groq Whisper** (batch) as early sanity check | Deepgram's streaming is fast/feature-rich and makes the cleanest reference; Groq gives the fastest first end-to-end signal as a degenerate batch case behind the same interface. |
+| Groq integration | Official **`groq` SDK** + in-memory WAV upload via `asyncio.to_thread()` | OpenAI-compatible transcriptions endpoint; default model `whisper-large-v3-turbo`; PCM→WAV matches Groq's 16 kHz mono expectation. |
 | Process model | Background daemon + TUI client over local IPC | Daemon listens for hotkeys always; TUI attaches on demand. |
 | Daemon authority | Daemon is the **single source of truth** | Owns mic, providers, state machine, injection, config; TUI is a thin observe/command client. Config changes flow through the daemon so they persist and take effect immediately (no TUI/daemon drift). |
 | IPC shape | Simple command/response + a separate log/event stream; ring buffer for logs & history | More maintainable than sharing complex objects across processes; predictable memory; clean TUI reconnects. |
@@ -87,7 +91,7 @@ The guiding principles:
 | Signal metering | **RMS level** for UI now; proper **VAD later** | RMS feeds the popup/TUI meter; `webrtcvad` or `silero-vad` when we need to avoid cutting off speech or trailing silence. |
 | Core concerns | State machine + post-processing pipeline are **first-class from early on** | They sit at the center of UX and the core text path; easier to refine while surrounding plumbing is still simple. |
 | Secrets | OS keyring via `navi.secrets` | Keep API keys out of plaintext config; `navi config set-key`. |
-| CLI | Typer subcommands | `start`, `tui` (stub), `config`, `doctor`, `audio`. |
+| CLI | Typer subcommands | `start`, `tui` (stub), `config`, `doctor`, `audio`, `transcribe`. |
 | Logging | File + console + ring buffer | `navi.logging.setup_logging`; ring buffer for future TUI tail. |
 
 High-level component map:
@@ -137,17 +141,19 @@ Navi/
 │   ├── test_config.py
 │   ├── test_doctor.py
 │   ├── test_logging.py
-│   └── test_secrets.py
+│   ├── test_providers.py
+│   ├── test_secrets.py
+│   └── test_transcribe.py
 └── navi/
     ├── __init__.py
     ├── __main__.py
-    ├── cli/               # start, tui, config, doctor, audio
+    ├── cli/               # start, tui, config, doctor, audio, transcribe
     ├── config/            # Pydantic models, paths, ConfigManager
     ├── secrets/           # keyring wrapper
     ├── logging/           # setup + RingBufferHandler
     ├── audio/             # capture session, devices, resample, metering
-    ├── core/              # stub — Phase 2
-    ├── providers/         # stub — Phase 2
+    ├── core/              # state machine, transcribe pipeline
+    ├── providers/         # STT interface, registry, Groq
     ├── hotkeys/           # stub — Phase 4
     ├── inject/            # stub — Phase 5
     └── tui/               # stub — Phase 7

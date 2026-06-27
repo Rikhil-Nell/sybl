@@ -15,6 +15,7 @@ from navi.audio import (
     list_input_devices,
     save_wav,
 )
+from navi.cli.meter import meter_loop, wait_for_enter
 from navi.config import AudioConfig, ConfigManager, log_path
 from navi.logging import setup_logging
 
@@ -108,13 +109,13 @@ async def _record(
         await session.start()
 
         stop_event = asyncio.Event()
-        meter_task = asyncio.create_task(_meter_loop(session, stop_event))
+        meter_task = asyncio.create_task(meter_loop(session, stop_event))
 
         if seconds is not None:
             await asyncio.sleep(seconds)
             stop_event.set()
         else:
-            await _wait_for_enter(stop_event)
+            await wait_for_enter(stop_event)
 
         stop_event.set()
         meter_task.cancel()
@@ -140,28 +141,6 @@ async def _record(
     output = save_path or default_recording_path()
     save_wav(output, pcm)
     typer.echo(f"Saved: {output}")
-
-
-async def _wait_for_enter(stop_event: asyncio.Event) -> None:
-    loop = asyncio.get_running_loop()
-    await loop.run_in_executor(None, sys.stdin.readline)
-    stop_event.set()
-
-
-async def _meter_loop(
-    session: AudioCaptureSession,
-    stop_event: asyncio.Event,
-) -> None:
-    bar_width = 24
-    while not stop_event.is_set():
-        level = session.current_level
-        dbfs = session.current_dbfs
-        filled = min(bar_width, int(level * bar_width))
-        bar = "#" * filled + "-" * (bar_width - filled)
-        line = f"\rLevel: [{bar}] {dbfs:5.0f} dBFS"
-        sys.stdout.write(line)
-        sys.stdout.flush()
-        await asyncio.sleep(0.03)
 
 
 def register(app: typer.Typer) -> None:

@@ -5,6 +5,7 @@ description = "Open-source BYOK voice dictation — speak anywhere, transcribe f
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "groq>=1.5.0",
     "keyring>=25.0.0",
     "numpy>=2.0.0",
     "platformdirs>=4.0.0",
@@ -13,6 +14,7 @@ dependencies = [
     "sounddevice>=0.5.0",
     "soundfile>=0.12.0",
     "soxr>=0.5.0",
+    "tenacity>=9.1.4",
     "tomli-w>=1.0.0",
     "typer>=0.12.0",
 ]
@@ -45,5 +47,5 @@ select = ["E", "F", "I", "UP"]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 markers = [
-    "integration: tests that require real microphone hardware",
+    "integration: tests that require real microphone hardware or live STT API keys",
 ]

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import typer
 
-from navi.cli import audio_cmd, config_cmd, doctor, start, tui
+from navi.cli import audio_cmd, config_cmd, doctor, start, transcribe_cmd, tui
 
 app = typer.Typer(
     name="navi",
@@ -31,6 +31,7 @@ start.register(app)
 tui.register(app)
 config_cmd.register(app)
 audio_cmd.register(app)
+transcribe_cmd.register(app)
 doctor.register(app)
 
 

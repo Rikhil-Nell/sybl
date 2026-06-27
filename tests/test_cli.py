@@ -49,3 +49,10 @@ def test_tui_stub() -> None:
     result = runner.invoke(app, ["tui"])
     assert result.exit_code == 0
     assert "Phase 7" in result.stdout
+
+
+def test_transcribe_help() -> None:
+    result = runner.invoke(app, ["transcribe", "--help"])
+    assert result.exit_code == 0
+    assert "transcribe" in result.stdout.lower()
+    assert "--seconds" in result.stdout
