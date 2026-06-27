@@ -28,7 +28,7 @@ def test_init_creates_config_file(tmp_config_path: Path) -> None:
     manager = ConfigManager(tmp_config_path)
     config = manager.init()
     assert tmp_config_path.exists()
-    assert config.provider.fallback_order == ["groq"]
+    assert config.provider.fallback_order == ["deepgram", "groq"]
 
 
 def test_round_trip_save_load(tmp_config_path: Path) -> None:

@@ -5,6 +5,7 @@ description = "Open-source BYOK voice dictation — speak anywhere, transcribe f
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "deepgram-sdk>=7.4.0",
     "groq>=1.5.0",
     "keyring>=25.0.0",
     "numpy>=2.0.0",

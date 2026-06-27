@@ -10,10 +10,19 @@ class GroqConfig(BaseModel):
     temperature: float = 0.0
 
 
+class DeepgramConfig(BaseModel):
+    model: str = "nova-3"
+    language: str | None = None
+    punctuate: bool = True
+    smart_format: bool = True
+    interim_results: bool = True
+
+
 class ProviderConfig(BaseModel):
     preferred: str = "groq"
-    fallback_order: list[str] = Field(default_factory=lambda: ["groq"])
+    fallback_order: list[str] = Field(default_factory=lambda: ["deepgram", "groq"])
     groq: GroqConfig = Field(default_factory=GroqConfig)
+    deepgram: DeepgramConfig = Field(default_factory=DeepgramConfig)
 
 
 class HotkeyConfig(BaseModel):

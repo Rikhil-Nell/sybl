@@ -32,8 +32,10 @@ def test_pcm_to_wav_bytes_has_wav_header() -> None:
     assert b"WAVE" in wav[:16]
 
 
-def test_list_providers_includes_groq() -> None:
-    assert "groq" in list_providers()
+def test_list_providers_includes_groq_and_deepgram() -> None:
+    providers = list_providers()
+    assert "groq" in providers
+    assert "deepgram" in providers
 
 
 def test_get_provider_unknown_raises() -> None:

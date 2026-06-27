@@ -4,11 +4,15 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import AsyncIterable, Callable
 from dataclasses import dataclass
 
+from navi.audio.session import AudioCaptureSession
 from navi.config.models import NaviConfig
 from navi.core.state import SessionState, StateMachine
-from navi.providers import STTError, get_provider
+from navi.providers import STTError
+from navi.providers.base import STTProvider
+from navi.providers.manager import resolve_provider
 from navi.providers.types import TranscriptionResult
 
 logger = logging.getLogger("navi.core.transcribe")
@@ -33,12 +37,15 @@ async def transcribe_pcm(
     peak_dbfs: float = 0.0,
 ) -> TranscribeOutcome:
     """Send captured PCM to the configured STT provider."""
-    provider_id = provider_name or config.provider.preferred
+    provider_id, provider = resolve_provider(
+        config,
+        prefer=provider_name,
+        streaming_required=False,
+    )
     state = StateMachine()
     state.transition(SessionState.LISTENING)
     state.transition(SessionState.PROCESSING)
 
-    provider = get_provider(provider_id, config)
     model = _provider_model(config, provider_id)
     start = time.monotonic()
 
@@ -61,9 +68,62 @@ async def transcribe_pcm(
     )
 
 
+async def transcribe_stream(
+    config: NaviConfig,
+    session: AudioCaptureSession,
+    *,
+    provider_name: str | None = None,
+    provider_id: str | None = None,
+    provider: STTProvider | None = None,
+    on_partial: Callable[[str], None] | None = None,
+    audio_duration_seconds: float = 0.0,
+    peak_dbfs: float = 0.0,
+) -> TranscribeOutcome:
+    """Stream PCM chunks from an active session to a streaming STT provider."""
+    if provider is None or provider_id is None:
+        provider_id, provider = resolve_provider(
+            config,
+            prefer=provider_name,
+            streaming_required=True,
+        )
+    state = StateMachine()
+    state.transition(SessionState.LISTENING)
+    state.transition(SessionState.PROCESSING)
+
+    model = _provider_model(config, provider_id)
+    start = time.monotonic()
+
+    async def pcm_chunks() -> AsyncIterable[bytes]:
+        async for chunk in session.chunks():
+            yield chunk.pcm
+
+    try:
+        text = await _collect_stream_text(
+            provider.transcribe(pcm_chunks()),
+            on_partial=on_partial,
+        )
+    except STTError:
+        state.transition(SessionState.ERROR)
+        raise
+
+    latency = time.monotonic() - start
+    state.transition(SessionState.IDLE)
+
+    return TranscribeOutcome(
+        text=text,
+        provider=provider_id,
+        model=model,
+        audio_duration_seconds=audio_duration_seconds,
+        latency_seconds=latency,
+        peak_dbfs=peak_dbfs,
+    )
+
+
 def _provider_model(config: NaviConfig, provider_id: str) -> str | None:
     if provider_id == "groq":
         return config.provider.groq.model
+    if provider_id == "deepgram":
+        return config.provider.deepgram.model
     return None
 
 
@@ -74,3 +134,23 @@ async def _collect_final_text(results) -> str:
         if result.is_final:
             final_parts.append(result.text)
     return "".join(final_parts).strip()
+
+
+async def _collect_stream_text(
+    results,
+    *,
+    on_partial: Callable[[str], None] | None = None,
+) -> str:
+    latest_final = ""
+    latest_partial = ""
+    async for result in results:
+        assert isinstance(result, TranscriptionResult)
+        if result.is_final:
+            latest_final = result.text
+            if on_partial is not None:
+                on_partial(result.text)
+        else:
+            latest_partial = result.text
+            if on_partial is not None:
+                on_partial(result.text)
+    return (latest_final or latest_partial).strip()

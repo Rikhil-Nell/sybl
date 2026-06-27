@@ -56,3 +56,4 @@ def test_transcribe_help() -> None:
     assert result.exit_code == 0
     assert "transcribe" in result.stdout.lower()
     assert "--seconds" in result.stdout
+    assert "--stream" in result.stdout

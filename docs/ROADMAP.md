@@ -96,14 +96,14 @@ batch turns out to be the easy/degenerate case.
 Goal: real-time transcription via the reference provider, then fill the BYOK
 matrix.
 
-- [ ] **Deepgram (streaming websocket) as the reference implementation** — manage
+- [x] **Deepgram (streaming websocket) as the reference implementation** — manage
       connection lifecycle, ~20–100 ms audio chunks, partial vs final results,
       and reconnection on disconnect.
 - [ ] AssemblyAI (streaming).
 - [ ] Gladia (lower priority unless multilingual demand).
-- [ ] **`ProviderCapabilities`** metadata per provider (streaming, partials,
+- [x] **`ProviderCapabilities`** metadata per provider (streaming, partials,
       languages, punctuation, diarization, max duration, etc.).
-- [ ] **`ProviderManager`** layer: load keys, check capabilities, honor
+- [x] **`ProviderManager`** layer: load keys, check capabilities, honor
       `preferred_stt` + `fallback_order` from config — fallback only at **session
       start**, not mid-stream; log which provider actually ran.
 

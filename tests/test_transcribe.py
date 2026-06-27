@@ -51,7 +51,10 @@ async def test_transcribe_pcm_collects_final_text() -> None:
     mock_provider.transcribe = fake_transcribe
     mock_provider.name = "groq"
 
-    with patch("navi.core.transcribe.get_provider", return_value=mock_provider):
+    with patch(
+        "navi.core.transcribe.resolve_provider",
+        return_value=("groq", mock_provider),
+    ):
         outcome = await transcribe_pcm(
             config,
             pcm,
@@ -78,7 +81,11 @@ async def test_transcribe_pcm_propagates_stt_errors() -> None:
 
     mock_provider = AsyncMock()
     mock_provider.transcribe = failing_transcribe
+    mock_provider.name = "groq"
 
-    with patch("navi.core.transcribe.get_provider", return_value=mock_provider):
+    with patch(
+        "navi.core.transcribe.resolve_provider",
+        return_value=("groq", mock_provider),
+    ):
         with pytest.raises(STTProviderError, match="boom"):
             await transcribe_pcm(config, pcm)

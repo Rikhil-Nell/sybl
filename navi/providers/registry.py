@@ -6,6 +6,7 @@ from collections.abc import Callable
 
 from navi.config.models import NaviConfig
 from navi.providers.base import STTProvider
+from navi.providers.deepgram import DeepgramProvider
 from navi.providers.errors import STTProviderError
 from navi.providers.groq import GroqProvider
 
@@ -13,6 +14,7 @@ ProviderFactory = Callable[[NaviConfig], STTProvider]
 
 _FACTORIES: dict[str, ProviderFactory] = {
     "groq": lambda config: GroqProvider(config.provider.groq),
+    "deepgram": lambda config: DeepgramProvider(config.provider.deepgram),
 }
 
 

@@ -147,8 +147,31 @@ def run_checks() -> list[CheckResult]:
                 )
             )
 
+        results.extend(_check_providers(config))
+
     results.extend(_check_audio())
 
+    return results
+
+
+def _check_providers(_config) -> list[CheckResult]:
+    from navi.providers import all_capabilities, list_providers
+
+    results: list[CheckResult] = []
+    registered = set(list_providers())
+    for caps in all_capabilities():
+        if caps.name not in registered:
+            continue
+        key_status = "key ok" if get_provider_key(caps.name) else "no key"
+        streaming = "stream" if caps.streaming else "batch"
+        partials = "partials" if caps.partial_results else "final-only"
+        results.append(
+            CheckResult(
+                f"Provider {caps.name}",
+                CheckStatus.PASS if get_provider_key(caps.name) else CheckStatus.WARN,
+                f"{streaming}, {partials}, {key_status}",
+            )
+        )
     return results
 
 

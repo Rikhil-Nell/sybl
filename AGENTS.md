@@ -1,7 +1,7 @@
 # AGENTS.md
 
 > Living source of truth for the Navi project. Read this first. Keep it current.
-> Last updated: 2026-06-26 (Phase 2 complete)
+> Last updated: 2026-06-26 (Phase 3 complete)
 
 ---
 
@@ -46,17 +46,19 @@ The guiding principles:
 
 > Update this section every time the project's reality changes.
 
-- **Phase:** Phase 2 complete — STT provider abstraction + Groq batch works; Phase 3 (Deepgram streaming) is next.
+- **Phase:** Phase 3 complete — Deepgram streaming + ProviderManager; Phase 4 (hotkeys) is next.
 - **Code:** `navi/audio/` implements `AudioCaptureSession` (sounddevice callback →
   asyncio queue, 16 kHz mono int16, resampling, dBFS peak metering, debug WAV save).
-  `navi/providers/` implements streaming-first STT interface, registry, and
-  `GroqProvider` (official SDK, batch degenerate streaming via in-memory WAV upload).
-  `navi/core/` has `StateMachine` and `transcribe_pcm` pipeline. CLI: `navi audio
-  devices/record`, `navi transcribe` (record + Groq). Stub modules remain for
-  hotkeys/inject/tui. `navi start` still runs the Phase 0 daemon skeleton.
+  `navi/providers/` implements streaming-first STT interface, `ProviderCapabilities`,
+  `resolve_provider` session-start selection, `GroqProvider` (batch), and
+  `DeepgramProvider` (WebSocket `/v1/listen` streaming + REST batch via official SDK).
+  `navi/core/` has `StateMachine`, `transcribe_pcm`, and `transcribe_stream`. CLI:
+  `navi audio devices/record`, `navi transcribe` (batch + `--stream` partials).
+  Stub modules remain for hotkeys/inject/tui. `navi start` still runs the Phase 0
+  daemon skeleton.
 - **Stack pinned:** `typer`, `pydantic`, `platformdirs`, `keyring`, `tomli-w`,
-  `sounddevice`, `numpy`, `soundfile`, `soxr`, `groq`, `tenacity`; dev: `ruff`,
-  `pytest`, `pytest-asyncio`.
+  `sounddevice`, `numpy`, `soundfile`, `soxr`, `groq`, `tenacity`, `deepgram-sdk`;
+  dev: `ruff`, `pytest`, `pytest-asyncio`.
 - **Primary platform:** Windows first (dev machine). Code stays cross-platform
   behind interfaces, but the core loop is proven on Windows before expanding.
 - **Open questions:** popup rendering mechanism; per-platform text-injection
@@ -79,6 +81,7 @@ The guiding principles:
 | STT providers | Pluggable, **streaming-first** interface | Core BYOK requirement; designing for streaming up front avoids rework when batch is the easy case. |
 | Reference provider | **Deepgram** (streaming) as reference; **Groq Whisper** (batch) as early sanity check | Deepgram's streaming is fast/feature-rich and makes the cleanest reference; Groq gives the fastest first end-to-end signal as a degenerate batch case behind the same interface. |
 | Groq integration | Official **`groq` SDK** + in-memory WAV upload via `asyncio.to_thread()` | OpenAI-compatible transcriptions endpoint; default model `whisper-large-v3-turbo`; PCM→WAV matches Groq's 16 kHz mono expectation. |
+| Deepgram integration | Official **`deepgram-sdk`** — WebSocket `wss://api.deepgram.com/v1/listen` for streaming, REST `/v1/listen` for batch | Raw linear16 PCM at 16 kHz mono on websocket; `interim_results=true` for partials; `CloseStream` on end; default model `nova-3`. |
 | Process model | Background daemon + TUI client over local IPC | Daemon listens for hotkeys always; TUI attaches on demand. |
 | Daemon authority | Daemon is the **single source of truth** | Owns mic, providers, state machine, injection, config; TUI is a thin observe/command client. Config changes flow through the daemon so they persist and take effect immediately (no TUI/daemon drift). |
 | IPC shape | Simple command/response + a separate log/event stream; ring buffer for logs & history | More maintainable than sharing complex objects across processes; predictable memory; clean TUI reconnects. |
@@ -139,8 +142,10 @@ Navi/
 │   ├── test_audio.py
 │   ├── test_cli.py
 │   ├── test_config.py
+│   ├── test_deepgram.py
 │   ├── test_doctor.py
 │   ├── test_logging.py
+│   ├── test_manager.py
 │   ├── test_providers.py
 │   ├── test_secrets.py
 │   └── test_transcribe.py
@@ -153,7 +158,7 @@ Navi/
     ├── logging/           # setup + RingBufferHandler
     ├── audio/             # capture session, devices, resample, metering
     ├── core/              # state machine, transcribe pipeline
-    ├── providers/         # STT interface, registry, Groq
+    ├── providers/         # STT interface, capabilities, manager, Groq, Deepgram
     ├── hotkeys/           # stub — Phase 4
     ├── inject/            # stub — Phase 5
     └── tui/               # stub — Phase 7
