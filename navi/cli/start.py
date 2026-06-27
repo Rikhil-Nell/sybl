@@ -45,13 +45,18 @@ def register(app: typer.Typer) -> None:
             "hold to dictate, release to transcribe"
         )
         typer.echo(f"Cancel: {config.hotkey.cancel_binding}")
-        typer.echo(
-            "Transcripts are logged until Phase 5 text injection. Press Ctrl+C to stop."
-        )
+        if config.inject.enabled:
+            typer.echo(
+                f"Injection: {config.inject.strategy} "
+                "(transcript pasted into the focused app on release)"
+            )
+        else:
+            typer.echo("Injection: disabled (transcripts logged only)")
+        typer.echo("Press Ctrl+C to stop.")
 
         if sys.platform != "win32":
             typer.echo(
-                "Warning: global hotkeys are Windows-only in Phase 4.",
+                "Warning: hotkeys and text injection are Windows-only for now.",
                 err=True,
             )
 

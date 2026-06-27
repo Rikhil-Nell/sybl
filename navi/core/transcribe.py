@@ -36,6 +36,7 @@ async def transcribe_pcm(
     audio_duration_seconds: float = 0.0,
     peak_dbfs: float = 0.0,
     state: StateMachine | None = None,
+    manage_idle_transition: bool | None = None,
 ) -> TranscribeOutcome:
     """Send captured PCM to the configured STT provider."""
     owns_state = state is None
@@ -43,6 +44,9 @@ async def transcribe_pcm(
     if owns_state:
         sm.transition(SessionState.LISTENING)
         sm.transition(SessionState.PROCESSING)
+
+    if manage_idle_transition is None:
+        manage_idle_transition = owns_state
 
     provider_id, provider = resolve_provider(
         config,
@@ -61,7 +65,7 @@ async def transcribe_pcm(
         raise
 
     latency = time.monotonic() - start
-    if sm.state == SessionState.PROCESSING:
+    if manage_idle_transition and sm.state == SessionState.PROCESSING:
         sm.transition(SessionState.IDLE)
 
     return TranscribeOutcome(
@@ -85,6 +89,7 @@ async def transcribe_stream(
     audio_duration_seconds: float = 0.0,
     peak_dbfs: float = 0.0,
     state: StateMachine | None = None,
+    manage_idle_transition: bool | None = None,
 ) -> TranscribeOutcome:
     """Stream PCM chunks from an active session to a streaming STT provider."""
     owns_state = state is None
@@ -92,6 +97,9 @@ async def transcribe_stream(
     if owns_state:
         sm.transition(SessionState.LISTENING)
         sm.transition(SessionState.PROCESSING)
+
+    if manage_idle_transition is None:
+        manage_idle_transition = owns_state
 
     if provider is None or provider_id is None:
         provider_id, provider = resolve_provider(
@@ -118,7 +126,7 @@ async def transcribe_stream(
         raise
 
     latency = time.monotonic() - start
-    if sm.state == SessionState.PROCESSING:
+    if manage_idle_transition and sm.state == SessionState.PROCESSING:
         sm.transition(SessionState.IDLE)
 
     return TranscribeOutcome(

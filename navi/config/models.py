@@ -36,6 +36,12 @@ class HotkeyConfig(BaseModel):
     min_duration_ms: int = 250
 
 
+class InjectConfig(BaseModel):
+    enabled: bool = True
+    strategy: Literal["paste"] = "paste"
+    restore_clipboard: bool = True
+
+
 class AudioConfig(BaseModel):
     device: str | None = None
     sample_rate: int = 16000
@@ -52,5 +58,6 @@ class LoggingConfig(BaseModel):
 class NaviConfig(BaseModel):
     provider: ProviderConfig = Field(default_factory=ProviderConfig)
     hotkey: HotkeyConfig = Field(default_factory=HotkeyConfig)
+    inject: InjectConfig = Field(default_factory=InjectConfig)
     audio: AudioConfig = Field(default_factory=AudioConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)

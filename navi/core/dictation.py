@@ -12,6 +12,7 @@ from navi.core.state import SessionState, StateMachine
 from navi.core.transcribe import TranscribeOutcome, transcribe_pcm, transcribe_stream
 from navi.hotkeys.base import HotkeyEvent
 from navi.hotkeys.focus import FocusTarget, capture_foreground
+from navi.inject import InjectError, TextInjector, create_injector
 from navi.providers import STTError, resolve_provider
 from navi.providers.capabilities import provider_capabilities
 
@@ -19,9 +20,15 @@ logger = logging.getLogger("navi.core.dictation")
 
 
 class DictationController:
-    """Coordinates hotkeys, audio capture, and STT for the daemon."""
+    """Coordinates hotkeys, audio capture, STT, and text injection for the daemon."""
 
-    def __init__(self, config: NaviConfig, *, verbose: bool = False) -> None:
+    def __init__(
+        self,
+        config: NaviConfig,
+        *,
+        verbose: bool = False,
+        injector: TextInjector | None = None,
+    ) -> None:
         self._config = config
         self._verbose = verbose
         self._state = StateMachine()
@@ -31,6 +38,7 @@ class DictationController:
         self._provider_id: str | None = None
         self._provider = None
         self._use_streaming = False
+        self._injector = injector or create_injector(config)
         self._lock = asyncio.Lock()
 
     @property
@@ -106,6 +114,7 @@ class DictationController:
                     provider=self._provider,
                     on_partial=self._on_partial,
                     state=self._state,
+                    manage_idle_transition=False,
                 )
             )
 
@@ -161,6 +170,7 @@ class DictationController:
                     audio_duration_seconds=stats.duration_seconds,
                     peak_dbfs=stats.peak_dbfs,
                     state=self._state,
+                    manage_idle_transition=False,
                 )
         except STTError as exc:
             logger.error("Transcription failed: %s", exc)
@@ -171,8 +181,36 @@ class DictationController:
             return
 
         self._log_outcome(outcome)
-        if self._state.state is not SessionState.IDLE:
-            self._state.reset()
+        await self._finish_outcome(outcome)
+
+    async def _finish_outcome(self, outcome: TranscribeOutcome) -> None:
+        try:
+            if outcome.text.strip() and self._config.inject.enabled:
+                self._state.transition(SessionState.INJECTING)
+                try:
+                    await asyncio.wait_for(
+                        self._injector.inject(outcome.text, self._focus),
+                        timeout=15.0,
+                    )
+                except TimeoutError as exc:
+                    raise InjectError("Injection timed out after 15s") from exc
+                logger.info("Injected transcript into focused application")
+            self._state.transition(SessionState.IDLE)
+        except InjectError as exc:
+            logger.error("Injection failed: %s", exc)
+            if self._state.state is SessionState.INJECTING:
+                self._state.transition(SessionState.ERROR)
+            elif self._state.state is SessionState.PROCESSING:
+                self._state.transition(SessionState.ERROR)
+            self._state.transition(SessionState.IDLE)
+        except Exception:
+            logger.exception("Injection failed unexpectedly")
+            if self._state.state is SessionState.INJECTING:
+                self._state.transition(SessionState.ERROR)
+            elif self._state.state is SessionState.PROCESSING:
+                self._state.transition(SessionState.ERROR)
+            if self._state.state is not SessionState.IDLE:
+                self._state.transition(SessionState.IDLE)
         await self._reset_session()
 
     async def _on_cancel(self) -> None:

@@ -55,9 +55,9 @@ uv run navi config set-key groq
 uv run navi start
 ```
 
-Hold `ctrl+alt+space` (default binding), speak, release to transcribe. Press
-`Esc` while holding to cancel. Transcripts are logged to the Navi log file until
-Phase 5 text injection.
+Hold `ctrl+alt+space` (default binding), speak, release — the transcript is pasted
+into whatever app had focus when you pressed the hotkey. Press `Esc` while holding
+to cancel.
 
 The default avoids `ctrl+shift+space`, which Windows Terminal uses for a new
 window. Change `binding` under `[hotkey]` in `config.toml` if you prefer something else.
@@ -74,6 +74,12 @@ Configure under `[hotkey]` in `config.toml`:
 - `cancel_binding` — default `esc`
 - `streaming` — `auto`, `on`, or `off` (auto streams when the resolved provider supports it)
 - `min_duration_ms` — skip accidental taps shorter than this
+
+Configure injection under `[inject]`:
+
+- `enabled` — default `true` (set `false` to log transcripts only)
+- `strategy` — default `paste` (clipboard + Ctrl+V)
+- `restore_clipboard` — default `true` (put your prior clipboard back after paste)
 
 Optional: run the full test suite (excludes mic hardware and live API tests):
 

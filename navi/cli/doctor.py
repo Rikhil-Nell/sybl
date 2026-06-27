@@ -156,6 +156,7 @@ def run_checks() -> list[CheckResult]:
 
         results.extend(_check_providers(config))
         results.extend(_check_hotkeys(config))
+        results.extend(_check_inject(config))
 
     results.extend(_check_audio())
 
@@ -230,6 +231,54 @@ def _check_hotkeys(config) -> list[CheckResult]:
         results.append(
             CheckResult(
                 "Cancel binding",
+                CheckStatus.FAIL,
+                str(exc),
+            )
+        )
+
+    return results
+
+
+def _check_inject(config) -> list[CheckResult]:
+    import sys
+
+    results: list[CheckResult] = []
+
+    if sys.platform != "win32":
+        results.append(
+            CheckResult(
+                "Text injection",
+                CheckStatus.WARN,
+                "Windows-only in Phase 5",
+            )
+        )
+        return results
+
+    if not config.inject.enabled:
+        results.append(
+            CheckResult(
+                "Text injection",
+                CheckStatus.WARN,
+                "disabled in config (transcripts logged only)",
+            )
+        )
+        return results
+
+    try:
+        from navi.inject import create_injector
+
+        create_injector(config)
+        results.append(
+            CheckResult(
+                "Text injection",
+                CheckStatus.PASS,
+                f"strategy={config.inject.strategy}, clipboard restore enabled",
+            )
+        )
+    except NotImplementedError as exc:
+        results.append(
+            CheckResult(
+                "Text injection",
                 CheckStatus.FAIL,
                 str(exc),
             )

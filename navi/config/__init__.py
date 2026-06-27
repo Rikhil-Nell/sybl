@@ -4,6 +4,7 @@ from navi.config.manager import ConfigError, ConfigManager
 from navi.config.models import (
     AudioConfig,
     HotkeyConfig,
+    InjectConfig,
     LoggingConfig,
     NaviConfig,
     ProviderConfig,
@@ -15,6 +16,7 @@ __all__ = [
     "ConfigError",
     "ConfigManager",
     "HotkeyConfig",
+    "InjectConfig",
     "LoggingConfig",
     "NaviConfig",
     "ProviderConfig",

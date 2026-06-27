@@ -99,7 +99,13 @@ class PynputHotkeyManager:
 
         if self._consumer_task is not None:
             try:
-                await self._consumer_task
+                await asyncio.wait_for(self._consumer_task, timeout=2.0)
+            except TimeoutError:
+                self._consumer_task.cancel()
+                try:
+                    await self._consumer_task
+                except asyncio.CancelledError:
+                    pass
             except asyncio.CancelledError:
                 pass
             self._consumer_task = None
@@ -117,7 +123,10 @@ class PynputHotkeyManager:
             event = await self._queue.get()
             if event is None:
                 break
-            await self._handler(event)
+            try:
+                await self._handler(event)
+            except Exception:
+                logger.exception("Hotkey handler failed for event %s", event.value)
 
     def _emit(self, event: HotkeyEvent) -> None:
         if self._loop is None or self._queue is None:

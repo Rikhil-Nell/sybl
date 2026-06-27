@@ -137,15 +137,15 @@ Goal: put the transcript where the user was going to type.
 > commercial polish in every app eventually needs a native helper. Be transparent
 > in docs, especially for macOS and Wayland.
 
-- [ ] `TextInjector` interface; capture focused target at **activation** time.
-- [ ] **Primary — clipboard set + simulated paste (Ctrl/Cmd+V)**, restoring the
+- [x] `TextInjector` interface; capture focused target at **activation** time.
+- [x] **Primary — clipboard set + simulated paste (Ctrl/Cmd+V)**, restoring the
       user's previous clipboard afterward. Ship this first; it is the milestone.
 - [ ] **Secondary / experimental — direct synthetic keystrokes** for edge cases
       where paste is undesirable.
-- [ ] Windows first (`SendInput` or paste simulation); macOS Accessibility and
+- [x] Windows first (`SendInput` or paste simulation); macOS Accessibility and
       Linux X11 later; document Wayland limitations honestly.
-- [ ] Config to choose strategy; sensible Windows default = paste.
-- [ ] **Milestone:** hotkey → speak → polished text appears in the previously
+- [x] Config to choose strategy; sensible Windows default = paste.
+- [x] **Milestone:** hotkey → speak → polished text appears in the previously
       focused app via clipboard paste. Keystroke injection is a later opt-in.
 
 ## Phase 5.5 — Minimal Post-Processing Seam (in the core path) ★

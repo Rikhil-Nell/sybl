@@ -19,6 +19,9 @@ def test_defaults_validate() -> None:
     assert config.hotkey.cancel_binding == "esc"
     assert config.hotkey.streaming == "auto"
     assert config.hotkey.min_duration_ms == 250
+    assert config.inject.enabled is True
+    assert config.inject.strategy == "paste"
+    assert config.inject.restore_clipboard is True
 
 
 def test_load_returns_defaults_when_missing(tmp_config_path: Path) -> None:

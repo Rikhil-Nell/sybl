@@ -1,7 +1,7 @@
 # AGENTS.md
 
 > Living source of truth for the Navi project. Read this first. Keep it current.
-> Last updated: 2026-06-26 (Phase 4 complete)
+> Last updated: 2026-06-28 (Phase 5 complete)
 
 ---
 
@@ -46,18 +46,19 @@ The guiding principles:
 
 > Update this section every time the project's reality changes.
 
-- **Phase:** Phase 4 complete — global PTT hotkeys on Windows; Phase 5 (text injection) is next.
+- **Phase:** Phase 5 complete — clipboard paste injection on Windows; Phase 5.5 (post-processing) is next.
 - **Code:** `navi/audio/` implements `AudioCaptureSession` (sounddevice callback →
   asyncio queue, 16 kHz mono int16, resampling, dBFS peak metering, debug WAV save).
   `navi/providers/` implements streaming-first STT interface, `ProviderCapabilities`,
   `resolve_provider` session-start selection, `GroqProvider` (batch), and
   `DeepgramProvider` (WebSocket `/v1/listen` streaming + REST batch via official SDK).
   `navi/hotkeys/` implements `HotkeyManager`, binding parser, Windows `pynput` PTT
-  backend, and focus capture at activation. `navi/core/` has `StateMachine`,
-  `DictationController`, `transcribe_pcm`, and `transcribe_stream`. CLI:
-  `navi audio devices/record`, `navi transcribe` (batch + `--stream` partials),
-  `navi hotkey test`, and `navi start` (hotkey-driven daemon — logs transcripts until
-  Phase 5 injection). Stub modules remain for inject/tui.
+  backend, and focus capture at activation. `navi/inject/` implements `TextInjector`,
+  Windows clipboard-paste injection with focus restore and clipboard restoration.
+  `navi/core/` has `StateMachine`, `DictationController`, `transcribe_pcm`, and
+  `transcribe_stream`. CLI: `navi audio devices/record`, `navi transcribe` (batch +
+  `--stream` partials), `navi hotkey test`, and `navi start` (hotkey dictation with
+  paste injection). Stub module remains for tui.
 - **Stack pinned:** `typer`, `pydantic`, `platformdirs`, `keyring`, `tomli-w`,
   `sounddevice`, `numpy`, `soundfile`, `soxr`, `groq`, `tenacity`, `deepgram-sdk`,
   `pynput`; dev: `ruff`, `pytest`, `pytest-asyncio`.
@@ -99,6 +100,7 @@ The guiding principles:
 | CLI | Typer subcommands | `start`, `tui` (stub), `config`, `doctor`, `audio`, `transcribe`, `hotkey`. |
 | Logging | File + console + ring buffer | `navi.logging.setup_logging`; ring buffer for future TUI tail. |
 | Phase 4 hotkeys | **PTT-first** via `pynput` behind `HotkeyManager`; focus captured at **activation press** | Reliability anchor before toggle mode; HWND stored for Phase 5 injection; Windows-only MVP. |
+| Phase 5 injection | **Clipboard set + simulated Ctrl+V** via `pynput`; restore prior clipboard; focus restore with thread attach | Primary strategy on Windows; keystroke injection deferred; no new deps (ctypes clipboard). |
 
 High-level component map:
 
@@ -150,6 +152,7 @@ Navi/
 │   ├── test_dictation.py
 │   ├── test_doctor.py
 │   ├── test_hotkeys.py
+│   ├── test_inject.py
 │   ├── test_logging.py
 │   ├── test_manager.py
 │   ├── test_providers.py
@@ -166,7 +169,7 @@ Navi/
     ├── core/              # state machine, dictation controller, transcribe pipeline
     ├── providers/         # STT interface, capabilities, manager, Groq, Deepgram
     ├── hotkeys/           # HotkeyManager, bindings, pynput backend, focus capture
-    ├── inject/            # stub — Phase 5
+    ├── inject/            # TextInjector, Windows clipboard-paste injection
     └── tui/               # stub — Phase 7
 ```
 
