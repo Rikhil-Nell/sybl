@@ -3,7 +3,22 @@ name = "navi"
 version = "0.1.0"
 description = "Open-source BYOK voice dictation — speak anywhere, transcribe fast, type it in."
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.12"
+authors = [{ name = "Rikhil Nellimarla", email = "nrikhil@gmail.com" }]
+keywords = ["dictation", "speech-to-text", "byok", "voice", "typer", "transcription"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+    "Typing :: Typed",
+]
 dependencies = [
     "deepgram-sdk>=7.4.0",
     "groq>=1.5.0",
@@ -24,6 +39,20 @@ dependencies = [
 
 [project.scripts]
 navi = "navi.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/Rikhil-Nell/navi"
+Documentation = "https://github.com/Rikhil-Nell/navi/tree/main/docs"
+Repository = "https://github.com/Rikhil-Nell/navi"
+Issues = "https://github.com/Rikhil-Nell/navi/issues"
+Changelog = "https://github.com/Rikhil-Nell/navi/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+    "ruff>=0.8.0",
+]
 
 [dependency-groups]
 dev = [
