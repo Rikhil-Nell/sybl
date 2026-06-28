@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import asyncio
+
 import typer
 
 from navi.config import ConfigManager
+from navi.ipc.client import IpcClient, IpcConnectionError, is_daemon_running
 from navi.secrets import (
     PROVIDER_KEYS,
     SecretsError,
@@ -38,6 +41,17 @@ def config_init_command() -> None:
 @config_app.command("show")
 def config_show_command() -> None:
     """Show the effective configuration (secrets are never stored here)."""
+    if is_daemon_running():
+        try:
+            payload = asyncio.run(_fetch_daemon_config())
+        except IpcConnectionError:
+            pass
+        else:
+            import json
+
+            typer.echo(json.dumps(payload.get("config", {}), indent=2))
+            return
+
     manager = ConfigManager()
     config = manager.load()
     typer.echo(config.model_dump_json(indent=2))
@@ -54,8 +68,11 @@ def config_set_key_command(
         confirmation_prompt=True,
     )
     try:
-        set_provider_key(provider, api_key)
-    except SecretsError as exc:
+        if is_daemon_running():
+            asyncio.run(_set_key_via_daemon(provider, api_key))
+        else:
+            set_provider_key(provider, api_key)
+    except (SecretsError, IpcConnectionError) as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(code=1) from exc
 
@@ -78,3 +95,13 @@ def config_keys_command() -> None:
 
 def register(app: typer.Typer) -> None:
     app.add_typer(config_app, name="config")
+
+
+async def _fetch_daemon_config() -> dict:
+    client = IpcClient()
+    return await client.get_config()
+
+
+async def _set_key_via_daemon(provider: str, api_key: str) -> None:
+    client = IpcClient()
+    await client.set_provider_key(provider, api_key)

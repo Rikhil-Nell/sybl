@@ -154,27 +154,27 @@ Goal: establish the cleanup step *now*, since it lives in the core path (provide
 text → cleanup → injection) and is much of the perceived quality. Keep it small;
 Phase 9 expands it.
 
-- [ ] A post-processing stage that runs after the provider returns and before
+- [x] A post-processing stage that runs after the provider returns and before
       injection, wired through the state machine's `processing` state.
-- [ ] Lightweight rule-based cleanup: basic punctuation/capitalization, trim
+- [x] Lightweight rule-based cleanup: basic punctuation/capitalization, trim
       filler words ("um", "uh"), collapse obvious rambling artifacts.
-- [ ] Make it a pluggable pipeline (ordered passes) so LLM/format passes and
+- [x] Make it a pluggable pipeline (ordered passes) so LLM/format passes and
       custom vocabulary drop in later without restructuring.
 
 ## Phase 6 — Daemon + IPC
 
 Goal: make Navi a always-on background service the TUI can attach to.
 
-- [ ] Daemon process that owns hotkeys, audio, providers, and injection.
-- [ ] State machine: `idle → listening → transcribing → injecting → idle`
-      (+ `cancelled`, `error`).
-- [ ] Local IPC: a simple **command/response** channel + a separate **log/event
+- [x] Daemon process that owns hotkeys, audio, providers, and injection.
+- [x] State machine: `idle → listening → processing → injecting → idle`
+      (+ `cancelled`, `error`) — exposed over IPC events.
+- [x] Local IPC: a simple **command/response** channel + a separate **log/event
       stream** (don't try to share complex objects across processes). Daemon
       keeps a **ring buffer** for logs & recent history so the TUI reconnects
       cleanly and memory stays predictable.
-- [ ] **Config flows through the daemon** so changes persist and take effect
+- [x] **Config flows through the daemon** so changes persist and take effect
       immediately — TUI and daemon never drift out of sync.
-- [ ] Start/stop/status management; single-instance guard; graceful shutdown
+- [x] Start/stop/status management; single-instance guard; graceful shutdown
       (users start/stop the daemon constantly during dev).
 - [ ] Auto-start integration docs (systemd user service / launchd / Windows
       startup) — optional opt-in.
@@ -183,15 +183,15 @@ Goal: make Navi a always-on background service the TUI can attach to.
 
 Goal: the only UI Navi has — terminal-native, for logs and reference.
 
-- [ ] Textual app that connects to the daemon over IPC.
-- [ ] Live log view (tails the daemon's ring buffer).
-- [ ] Status panel: current state, active provider, mic, current binding.
-- [ ] Transcription history: scrollback of recent transcripts to copy/refer to.
-- [ ] In-TUI config screens: provider selection, keys, hotkeys, device — all
-      writes routed through the daemon (no direct file edits from the TUI).
-- [ ] First-run **BYOK onboarding**: a clear, guided key-setup flow (this is the
+- [x] Textual app that connects to the daemon over IPC.
+- [x] Live log view (tails the daemon's ring buffer).
+- [x] Status panel: current state, active provider, mic, current binding.
+- [x] Transcription history: scrollback of recent transcripts to copy/refer to.
+- [x] In-TUI config screens: provider selection, keys, postprocess/inject toggles —
+      all writes routed through the daemon (hotkey rebinding deferred).
+- [x] First-run **BYOK onboarding**: a clear, guided key-setup flow (this is the
       make-or-break moment for a BYOK tool).
-- [ ] Keyboard-driven everything; no mouse required.
+- [x] Keyboard-driven everything; no mouse required.
 
 ## Phase 8 — The "Popup" Capture Indicator
 

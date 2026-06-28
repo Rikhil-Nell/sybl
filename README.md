@@ -81,6 +81,36 @@ Configure injection under `[inject]`:
 - `strategy` — default `paste` (clipboard + Ctrl+V)
 - `restore_clipboard` — default `true` (put your prior clipboard back after paste)
 
+Configure post-processing under `[postprocess]`:
+
+- `enabled` — default `true`
+- `trim_fillers` — remove leading/trailing "um", "uh", etc.
+- `capitalize` — capitalize the first letter
+- `ensure_punctuation` — default `false` (adds `.` when missing)
+
+## Daemon + TUI (Phase 6 + 7)
+
+Run the daemon in one terminal, attach the TUI in another:
+
+```powershell
+# Terminal A
+uv run navi start
+
+# Terminal B
+uv run navi tui
+```
+
+Other daemon commands:
+
+```powershell
+uv run navi status
+uv run navi stop
+```
+
+The TUI shows live logs, dictation state, transcription history, and in-app settings
+(provider, API keys, post-processing). On first run with no keys configured, a BYOK
+onboarding wizard appears.
+
 Optional: run the full test suite (excludes mic hardware and live API tests):
 
 ```powershell

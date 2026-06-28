@@ -45,10 +45,18 @@ def test_doctor_runs() -> None:
     assert "Python version" in result.stdout
 
 
-def test_tui_stub() -> None:
-    result = runner.invoke(app, ["tui"])
-    assert result.exit_code == 0
-    assert "Phase 7" in result.stdout
+def test_status_when_daemon_down() -> None:
+    with patch("navi.cli.status.is_daemon_running", return_value=False):
+        result = runner.invoke(app, ["status"])
+    assert result.exit_code == 1
+    assert "not running" in (result.stdout + result.stderr).lower()
+
+
+def test_tui_requires_daemon() -> None:
+    with patch("navi.cli.tui.is_daemon_running", return_value=False):
+        result = runner.invoke(app, ["tui"])
+    assert result.exit_code == 1
+    assert "not running" in (result.stdout + result.stderr).lower()
 
 
 def test_transcribe_help() -> None:

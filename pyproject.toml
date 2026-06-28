@@ -17,6 +17,7 @@ dependencies = [
     "soundfile>=0.12.0",
     "soxr>=0.5.0",
     "tenacity>=9.1.4",
+    "textual>=0.85.0",
     "tomli-w>=1.0.0",
     "typer>=0.12.0",
 ]

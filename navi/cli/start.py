@@ -3,20 +3,15 @@
 from __future__ import annotations
 
 import asyncio
-import logging
-import signal
 import sys
 
 import typer
 
 from navi import __version__
 from navi.config import ConfigManager, log_path
-from navi.core.dictation import DictationController
-from navi.hotkeys import create_hotkey_manager
-from navi.logging import setup_logging
+from navi.core.daemon import NaviDaemon
+from navi.ipc.single_instance import DaemonAlreadyRunningError
 from navi.secrets import list_configured_providers
-
-logger = logging.getLogger("navi.start")
 
 
 def register(app: typer.Typer) -> None:
@@ -28,7 +23,6 @@ def register(app: typer.Typer) -> None:
         verbose = bool(ctx.obj and ctx.obj.get("verbose"))
         config_manager = ConfigManager()
         config = config_manager.load()
-        setup_logging(config.logging, log_file=log_path(), verbose=verbose)
 
         configured = list_configured_providers()
         typer.echo(f"Navi v{__version__}")
@@ -52,7 +46,8 @@ def register(app: typer.Typer) -> None:
             )
         else:
             typer.echo("Injection: disabled (transcripts logged only)")
-        typer.echo("Press Ctrl+C to stop.")
+        typer.echo("Attach the TUI from another terminal: navi tui")
+        typer.echo("Press Ctrl+C to stop (or run `navi stop` from another terminal).")
 
         if sys.platform != "win32":
             typer.echo(
@@ -61,35 +56,15 @@ def register(app: typer.Typer) -> None:
             )
 
         try:
-            asyncio.run(_run_daemon(config, verbose=verbose))
+            asyncio.run(_run_daemon(verbose=verbose))
+        except DaemonAlreadyRunningError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(code=1) from exc
         except NotImplementedError as exc:
             typer.echo(str(exc), err=True)
             raise typer.Exit(code=1) from exc
 
 
-async def _run_daemon(config, *, verbose: bool) -> None:
-    stop_event = asyncio.Event()
-    loop = asyncio.get_running_loop()
-
-    def _request_stop() -> None:
-        logger.info("Shutdown requested")
-        stop_event.set()
-
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        try:
-            loop.add_signal_handler(sig, _request_stop)
-        except NotImplementedError:
-            signal.signal(sig, lambda _signum, _frame: _request_stop())
-
-    controller = DictationController(config, verbose=verbose)
-    hotkeys = create_hotkey_manager(config.hotkey)
-
-    await hotkeys.start(controller.handle_hotkey_event)
-    logger.info("Navi daemon started")
-
-    try:
-        await stop_event.wait()
-    finally:
-        await controller.shutdown()
-        await hotkeys.stop()
-        logger.info("Navi daemon stopped")
+async def _run_daemon(*, verbose: bool) -> None:
+    daemon = NaviDaemon(verbose=verbose)
+    await daemon.run()

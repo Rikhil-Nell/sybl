@@ -10,6 +10,8 @@ from navi.cli import (
     doctor,
     hotkey_cmd,
     start,
+    status,
+    stop,
     transcribe_cmd,
     tui,
 )
@@ -36,6 +38,8 @@ def main(
 
 
 start.register(app)
+status.register(app)
+stop.register(app)
 tui.register(app)
 config_cmd.register(app)
 audio_cmd.register(app)

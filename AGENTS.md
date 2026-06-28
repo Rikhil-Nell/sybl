@@ -1,7 +1,7 @@
 # AGENTS.md
 
 > Living source of truth for the Navi project. Read this first. Keep it current.
-> Last updated: 2026-06-28 (Phase 5 complete)
+> Last updated: 2026-06-28 (Phase 7 complete)
 
 ---
 
@@ -46,22 +46,24 @@ The guiding principles:
 
 > Update this section every time the project's reality changes.
 
-- **Phase:** Phase 5 complete — clipboard paste injection on Windows; Phase 5.5 (post-processing) is next.
+- **Phase:** Phase 7 complete — daemon IPC + Textual TUI attach; Phase 8 (popup) is next.
 - **Code:** `navi/audio/` implements `AudioCaptureSession` (sounddevice callback →
   asyncio queue, 16 kHz mono int16, resampling, dBFS peak metering, debug WAV save).
   `navi/providers/` implements streaming-first STT interface, `ProviderCapabilities`,
   `resolve_provider` session-start selection, `GroqProvider` (batch), and
-  `DeepgramProvider` (WebSocket `/v1/listen` streaming + REST batch via official SDK).
+  `DeepgramProvider` (WebSocket streaming + REST batch via official SDK).
   `navi/hotkeys/` implements `HotkeyManager`, binding parser, Windows `pynput` PTT
   backend, and focus capture at activation. `navi/inject/` implements `TextInjector`,
   Windows clipboard-paste injection with focus restore and clipboard restoration.
-  `navi/core/` has `StateMachine`, `DictationController`, `transcribe_pcm`, and
-  `transcribe_stream`. CLI: `navi audio devices/record`, `navi transcribe` (batch +
-  `--stream` partials), `navi hotkey test`, and `navi start` (hotkey dictation with
-  paste injection). Stub module remains for tui.
+  `navi/core/` has `StateMachine`, `DictationController`, `NaviDaemon`, post-processing,
+  `TranscriptHistory`, `EventBus`, and transcribe pipeline. `navi/ipc/` implements
+  NDJSON command/event TCP servers and client. `navi/tui/` is a Textual app (logs,
+  status, history, settings, BYOK onboarding). CLI: `navi start`, `navi stop`,
+  `navi status`, `navi tui`, `navi config`, `navi doctor`, `navi audio`, `navi transcribe`,
+  `navi hotkey test`.
 - **Stack pinned:** `typer`, `pydantic`, `platformdirs`, `keyring`, `tomli-w`,
   `sounddevice`, `numpy`, `soundfile`, `soxr`, `groq`, `tenacity`, `deepgram-sdk`,
-  `pynput`; dev: `ruff`, `pytest`, `pytest-asyncio`.
+  `pynput`, `textual`; dev: `ruff`, `pytest`, `pytest-asyncio`.
 - **Primary platform:** Windows first (dev machine). Code stays cross-platform
   behind interfaces, but the core loop is proven on Windows before expanding.
 - **Open questions:** popup rendering mechanism; per-platform text-injection
@@ -76,7 +78,7 @@ The guiding principles:
 |------|----------|-----------|
 | Language | Python 3.12 | Already scaffolded; first-class STT SDKs; great TUI ecosystem. |
 | Packaging / env | `uv` + `pyproject.toml` | Already in place; fast, reproducible. |
-| TUI framework | Textual (proposed) | Modern, async, rich rendering for logs/history. |
+| TUI framework | Textual (pinned) | Modern, async, rich rendering for logs/history; `navi tui` attaches over IPC. |
 | Audio capture | `sounddevice` + **callback → queue** pattern | PortAudio bindings, NumPy-friendly; callback pushes int16 PCM to an `asyncio.Queue`; never block or process in the callback. |
 | Audio format | **16 kHz, mono, int16 PCM** | What most STT providers expect; resample in-pipeline if the device opens at 48 kHz. |
 | Daemon concurrency | **`asyncio` event loop** + dedicated audio thread | Daemon/TUI/async providers run on asyncio; sounddevice callback thread only enqueues chunks. |
@@ -97,10 +99,13 @@ The guiding principles:
 | Signal metering | **RMS level** for UI now; proper **VAD later** | RMS feeds the popup/TUI meter; `webrtcvad` or `silero-vad` when we need to avoid cutting off speech or trailing silence. |
 | Core concerns | State machine + post-processing pipeline are **first-class from early on** | They sit at the center of UX and the core text path; easier to refine while surrounding plumbing is still simple. |
 | Secrets | OS keyring via `navi.secrets` | Keep API keys out of plaintext config; `navi config set-key`. |
-| CLI | Typer subcommands | `start`, `tui` (stub), `config`, `doctor`, `audio`, `transcribe`, `hotkey`. |
+| CLI | Typer subcommands | `start`, `stop`, `status`, `tui`, `config`, `doctor`, `audio`, `transcribe`, `hotkey`. |
 | Logging | File + console + ring buffer | `navi.logging.setup_logging`; ring buffer for future TUI tail. |
 | Phase 4 hotkeys | **PTT-first** via `pynput` behind `HotkeyManager`; focus captured at **activation press** | Reliability anchor before toggle mode; HWND stored for Phase 5 injection; Windows-only MVP. |
-| Phase 5 injection | **Clipboard set + simulated Ctrl+V** via `pynput`; restore prior clipboard; focus restore with thread attach | Primary strategy on Windows; keystroke injection deferred; no new deps (ctypes clipboard). |
+| Phase 5 injection | **Clipboard set + simulated Ctrl+V** via `SendInput` (ctypes); restore prior clipboard; focus restore with thread attach | Primary strategy on Windows; avoids pynput paste deadlock with hotkey listener; no new deps. |
+| Phase 5.5 post-processing | **Rule-based pipeline** (`PostProcessConfig` + ordered passes) between STT and inject | Whitespace, filler trim, capitalize on by default; auto-punctuation off; Phase 9 expands without restructuring. |
+| Phase 6 IPC | **TCP localhost NDJSON** — separate command + event ports; `daemon.json` + PID lock | Cross-platform; asyncio-native; TUI/CLI attach without shared memory. |
+| Phase 7 TUI | **Textual dashboard** — logs, status, history, settings, BYOK onboarding | All config/key writes routed through daemon IPC; keyboard-driven MVP. |
 
 High-level component map:
 
@@ -151,26 +156,33 @@ Navi/
 │   ├── test_deepgram.py
 │   ├── test_dictation.py
 │   ├── test_doctor.py
+│   ├── test_history.py
 │   ├── test_hotkeys.py
 │   ├── test_inject.py
+│   ├── test_ipc_protocol.py
+│   ├── test_ipc_server.py
 │   ├── test_logging.py
 │   ├── test_manager.py
+│   ├── test_postprocess.py
 │   ├── test_providers.py
 │   ├── test_secrets.py
-│   └── test_transcribe.py
+│   ├── test_single_instance.py
+│   ├── test_transcribe.py
+│   └── test_tui_client.py
 └── navi/
     ├── __init__.py
     ├── __main__.py
-    ├── cli/               # start, tui, config, doctor, audio, transcribe, hotkey
+    ├── cli/               # start, stop, status, tui, config, doctor, audio, transcribe, hotkey
     ├── config/            # Pydantic models, paths, ConfigManager
     ├── secrets/           # keyring wrapper
     ├── logging/           # setup + RingBufferHandler
+    ├── ipc/               # NDJSON command/event servers + client
     ├── audio/             # capture session, devices, resample, metering
-    ├── core/              # state machine, dictation controller, transcribe pipeline
+    ├── core/              # daemon, state machine, dictation, history, events, transcribe
     ├── providers/         # STT interface, capabilities, manager, Groq, Deepgram
     ├── hotkeys/           # HotkeyManager, bindings, pynput backend, focus capture
     ├── inject/            # TextInjector, Windows clipboard-paste injection
-    └── tui/               # stub — Phase 7
+    └── tui/               # Textual client (dashboard, settings, onboarding)
 ```
 
 ## 6. Conventions
