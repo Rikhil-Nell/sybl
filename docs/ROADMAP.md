@@ -210,12 +210,14 @@ Goal: a small on-screen cue that Navi is listening near the cursor.
 Goal: make the output genuinely good to use day to day. **Expands the Phase 5.5
 seam** rather than starting fresh.
 
-- [ ] Deepen rule-based cleanup beyond the minimal pass.
-- [ ] Custom vocabulary / replacements dictionary (names, jargon, snippets) —
-      cheap to add, high-leverage, gives users immediate control.
-- [ ] Optional LLM "format pass" (also BYOK) for tone/cleanup.
-- [ ] Voice commands (e.g. "new line", "scratch that").
-- [ ] Per-app profiles / language selection.
+- [x] Deepen rule-based cleanup beyond the minimal pass (quote/dash normalize,
+      punct spacing, optional repeated-word collapse).
+- [x] Custom vocabulary **STT hints** (names, jargon) — Deepgram keyterms + Groq
+      prompt; `navi config vocab` CLI. *(Post-STT replacement dictionary deferred;
+      future LLM pass reuses the same term list.)*
+- [ ] Optional LLM "format pass" (also BYOK) for tone/cleanup — deferred.
+- [x] Voice commands on the final transcript (`new line`, `scratch that`, etc.).
+- [ ] Per-app profiles / language selection — out of scope for now (English-first).
 
 ## Phase 10 — Packaging, Docs & Open-Source Release
 

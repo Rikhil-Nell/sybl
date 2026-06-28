@@ -46,6 +46,12 @@ def build_post_processor(config: PostProcessConfig) -> PostProcessor:
     passes: list[Callable[[str], str]] = [normalize_whitespace]
     if config.trim_fillers:
         passes.append(trim_filler_words)
+    if config.collapse_repeated_words:
+        passes.append(collapse_repeated_words)
+    if config.normalize_quotes:
+        passes.append(normalize_quotes)
+    if config.trim_space_before_punctuation:
+        passes.append(trim_space_before_punctuation)
     if config.capitalize:
         passes.append(capitalize_first)
     if config.ensure_punctuation:
@@ -65,6 +71,29 @@ def trim_filler_words(text: str) -> str:
         if updated == result:
             return result
         result = updated
+
+
+def collapse_repeated_words(text: str) -> str:
+    return re.sub(r"\b(\w+)(?:\s+\1\b)+", r"\1", text, flags=re.IGNORECASE)
+
+
+def normalize_quotes(text: str) -> str:
+    replacements = {
+        "\u201c": '"',
+        "\u201d": '"',
+        "\u2018": "'",
+        "\u2019": "'",
+        "\u2014": "-",
+        "\u2013": "-",
+    }
+    result = text
+    for source, target in replacements.items():
+        result = result.replace(source, target)
+    return result
+
+
+def trim_space_before_punctuation(text: str) -> str:
+    return re.sub(r"\s+([,.!?;:])", r"\1", text)
 
 
 def capitalize_first(text: str) -> str:

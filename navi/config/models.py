@@ -47,6 +47,17 @@ class PostProcessConfig(BaseModel):
     trim_fillers: bool = True
     capitalize: bool = True
     ensure_punctuation: bool = False
+    collapse_repeated_words: bool = False
+    normalize_quotes: bool = True
+    trim_space_before_punctuation: bool = True
+
+
+class VocabularyConfig(BaseModel):
+    enabled: bool = True
+
+
+class VoiceCommandsConfig(BaseModel):
+    enabled: bool = True
 
 
 class AudioConfig(BaseModel):
@@ -86,6 +97,8 @@ class NaviConfig(BaseModel):
     hotkey: HotkeyConfig = Field(default_factory=HotkeyConfig)
     inject: InjectConfig = Field(default_factory=InjectConfig)
     postprocess: PostProcessConfig = Field(default_factory=PostProcessConfig)
+    vocabulary: VocabularyConfig = Field(default_factory=VocabularyConfig)
+    voice_commands: VoiceCommandsConfig = Field(default_factory=VoiceCommandsConfig)
     audio: AudioConfig = Field(default_factory=AudioConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     ipc: IpcConfig = Field(default_factory=IpcConfig)

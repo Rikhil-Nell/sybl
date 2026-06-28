@@ -18,6 +18,7 @@ from tenacity import (
 
 from navi.audio.types import TARGET_SAMPLE_RATE
 from navi.config.models import DeepgramConfig
+from navi.config.vocabulary import format_deepgram_keyterms
 from navi.providers.errors import (
     STTAuthError,
     STTProviderError,
@@ -34,9 +35,16 @@ logger = logging.getLogger("navi.providers.deepgram")
 class DeepgramProvider:
     name = "deepgram"
 
-    def __init__(self, config: DeepgramConfig, *, api_key: str | None = None) -> None:
+    def __init__(
+        self,
+        config: DeepgramConfig,
+        *,
+        api_key: str | None = None,
+        vocabulary: list[str] | None = None,
+    ) -> None:
         self._config = config
         self._api_key = api_key
+        self._vocabulary = list(vocabulary or [])
 
     async def transcribe(
         self,
@@ -155,6 +163,7 @@ class DeepgramProvider:
         }
         if self._config.language is not None:
             kwargs["language"] = self._config.language
+        kwargs.update(self._vocabulary_kwargs())
         return kwargs
 
     def _media_kwargs(self) -> dict[str, object]:
@@ -165,7 +174,13 @@ class DeepgramProvider:
         }
         if self._config.language is not None:
             kwargs["language"] = self._config.language
+        kwargs.update(self._vocabulary_kwargs())
         return kwargs
+
+    def _vocabulary_kwargs(self) -> dict[str, object]:
+        if not self._vocabulary:
+            return {}
+        return {"keyterm": format_deepgram_keyterms(self._vocabulary)}
 
     def _resolve_api_key(self) -> str:
         if self._api_key:

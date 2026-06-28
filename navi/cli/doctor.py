@@ -158,6 +158,8 @@ def run_checks() -> list[CheckResult]:
         results.extend(_check_hotkeys(config))
         results.extend(_check_inject(config))
         results.extend(_check_postprocess(config))
+        results.extend(_check_vocabulary(config))
+        results.extend(_check_voice_commands(config))
         results.extend(_check_indicator(config))
 
     results.extend(_check_daemon())
@@ -338,6 +340,12 @@ def _check_postprocess(config) -> list[CheckResult]:
     enabled = []
     if config.postprocess.trim_fillers:
         enabled.append("fillers")
+    if config.postprocess.collapse_repeated_words:
+        enabled.append("repeat-words")
+    if config.postprocess.normalize_quotes:
+        enabled.append("quotes")
+    if config.postprocess.trim_space_before_punctuation:
+        enabled.append("punct-space")
     if config.postprocess.capitalize:
         enabled.append("capitalize")
     if config.postprocess.ensure_punctuation:
@@ -348,6 +356,68 @@ def _check_postprocess(config) -> list[CheckResult]:
             "Post-processing",
             CheckStatus.PASS,
             f"{flags}; sample -> {sample!r}",
+        )
+    ]
+
+
+def _check_vocabulary(config) -> list[CheckResult]:
+    from navi.config.vocabulary import VocabularyError, VocabularyStore
+
+    if not config.vocabulary.enabled:
+        return [
+            CheckResult(
+                "Vocabulary hints",
+                CheckStatus.WARN,
+                "disabled in config (no STT hint terms sent)",
+            )
+        ]
+
+    store = VocabularyStore()
+    try:
+        terms = store.load_terms()
+    except VocabularyError as exc:
+        return [
+            CheckResult(
+                "Vocabulary hints",
+                CheckStatus.FAIL,
+                str(exc),
+            )
+        ]
+
+    if not terms:
+        return [
+            CheckResult(
+                "Vocabulary hints",
+                CheckStatus.WARN,
+                f"enabled but empty ({store.path})",
+            )
+        ]
+
+    preview = ", ".join(terms[:5])
+    suffix = f" (+{len(terms) - 5} more)" if len(terms) > 5 else ""
+    return [
+        CheckResult(
+            "Vocabulary hints",
+            CheckStatus.PASS,
+            f"{len(terms)} term(s): {preview}{suffix}",
+        )
+    ]
+
+
+def _check_voice_commands(config) -> list[CheckResult]:
+    if not config.voice_commands.enabled:
+        return [
+            CheckResult(
+                "Voice commands",
+                CheckStatus.WARN,
+                "disabled in config",
+            )
+        ]
+    return [
+        CheckResult(
+            "Voice commands",
+            CheckStatus.PASS,
+            "new line, scratch that, period, comma (final transcript)",
         )
     ]
 

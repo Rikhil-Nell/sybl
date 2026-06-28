@@ -9,9 +9,11 @@ from dataclasses import replace
 
 from navi.audio import AudioCaptureSession, AudioError
 from navi.config.models import NaviConfig
+from navi.config.vocabulary import VocabularyStore
 from navi.core.postprocess import process_text
 from navi.core.state import SessionState, StateMachine
 from navi.core.transcribe import TranscribeOutcome, transcribe_pcm, transcribe_stream
+from navi.core.voice_commands import apply_voice_commands
 from navi.hotkeys.base import HotkeyEvent
 from navi.hotkeys.focus import FocusTarget, capture_foreground
 from navi.inject import InjectError, TextInjector, create_injector
@@ -106,9 +108,11 @@ class DictationController:
         )
 
         streaming_required = self._config.hotkey.streaming == "on"
+        vocabulary = self._load_vocabulary_terms()
         self._provider_id, self._provider = resolve_provider(
             self._config,
             streaming_required=streaming_required,
+            vocabulary=vocabulary,
         )
         self._use_streaming = _should_stream(
             self._config,
@@ -221,13 +225,20 @@ class DictationController:
                 final_text,
             )
 
+        command_result = apply_voice_commands(self._config.voice_commands, final_text)
+        final_text = command_result.text
+        if command_result.skip_inject:
+            logger.info("Voice command cancelled injection for this utterance")
+
         if self._on_transcript is not None:
             result = self._on_transcript(outcome, outcome.text, final_text)
             if asyncio.iscoroutine(result):
                 await result
 
         try:
-            if final_text.strip() and self._config.inject.enabled:
+            if command_result.skip_inject:
+                await self._transition(SessionState.IDLE)
+            elif final_text.strip() and self._config.inject.enabled:
                 await self._transition(SessionState.INJECTING)
                 try:
                     await asyncio.wait_for(
@@ -311,6 +322,11 @@ class DictationController:
             outcome.latency_seconds,
             outcome.text or "(empty)",
         )
+
+    def _load_vocabulary_terms(self) -> list[str]:
+        if not self._config.vocabulary.enabled:
+            return []
+        return VocabularyStore().load_terms()
 
 
 def _should_stream(

@@ -7,6 +7,7 @@ import asyncio
 import typer
 
 from navi.config import ConfigManager
+from navi.config.vocabulary import VocabularyError, VocabularyStore
 from navi.ipc.client import IpcClient, IpcConnectionError, is_daemon_running
 from navi.secrets import (
     PROVIDER_KEYS,
@@ -16,6 +17,8 @@ from navi.secrets import (
 )
 
 config_app = typer.Typer(help="View and manage Navi configuration.")
+vocab_app = typer.Typer(help="Manage STT vocabulary hints.")
+config_app.add_typer(vocab_app, name="vocab")
 
 
 @config_app.command("path")
@@ -91,6 +94,60 @@ def config_keys_command() -> None:
     typer.echo("Configured provider keys:")
     for provider in configured:
         typer.echo(f"  - {provider}")
+
+
+@vocab_app.command("path")
+def vocab_path_command() -> None:
+    """Print the vocabulary file path."""
+    store = VocabularyStore()
+    typer.echo(store.path)
+
+
+@vocab_app.command("list")
+def vocab_list_command() -> None:
+    """List configured STT vocabulary hints."""
+    store = VocabularyStore()
+    try:
+        terms = store.load_terms()
+    except VocabularyError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
+    if not terms:
+        typer.echo("No vocabulary terms configured.")
+        typer.echo("Add terms with: navi config vocab add <term>")
+        typer.echo(f"File: {store.path}")
+        return
+    typer.echo(f"Vocabulary ({store.path}):")
+    for term in terms:
+        typer.echo(f"  - {term}")
+
+
+@vocab_app.command("add")
+def vocab_add_command(
+    term: str = typer.Argument(..., help="Name, jargon term, or proper noun"),
+) -> None:
+    """Add a vocabulary hint passed to STT providers at session start."""
+    store = VocabularyStore()
+    try:
+        terms = store.add_term(term)
+    except VocabularyError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"Added {term!r}. {len(terms)} term(s) configured.")
+
+
+@vocab_app.command("remove")
+def vocab_remove_command(
+    term: str = typer.Argument(..., help="Term to remove"),
+) -> None:
+    """Remove a vocabulary hint."""
+    store = VocabularyStore()
+    try:
+        terms = store.remove_term(term)
+    except VocabularyError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"Removed {term!r}. {len(terms)} term(s) remain.")
 
 
 def register(app: typer.Typer) -> None:

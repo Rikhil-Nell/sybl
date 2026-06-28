@@ -88,6 +88,41 @@ Configure post-processing under `[postprocess]`:
 - `capitalize` — capitalize the first letter
 - `ensure_punctuation` — default `false` (adds `.` when missing)
 
+## Phase 9 — Dictation quality (Phase 9)
+
+Teach STT your names and jargon, tighten cleanup rules, and use spoken commands in the final transcript.
+
+### Custom vocabulary (STT hints)
+
+Add terms passed to Deepgram keyterms / Groq Whisper prompt at each session start:
+
+```powershell
+uv run navi config vocab add Rikhil
+uv run navi config vocab add Navi
+uv run navi config vocab list
+```
+
+Stored in `vocabulary.toml` under your Navi state directory. Disable with
+`vocabulary.enabled = false` in `config.toml`.
+
+### Voice commands
+
+Parsed from the **final** transcript after post-processing (works in batch and streaming):
+
+- `new line` / `newline` — inserts a line break
+- `scratch that` / `undo that` — cancels injection for that utterance
+- `period` / `comma` — inserts `.` / `,`
+
+Disable with `voice_commands.enabled = false`.
+
+### Extended post-processing
+
+Additional optional passes under `[postprocess]`:
+
+- `collapse_repeated_words` — default `false`
+- `normalize_quotes` — default `true`
+- `trim_space_before_punctuation` — default `true`
+
 ## Daemon + TUI (Phase 6 + 7)
 
 Run the daemon in one terminal, attach the TUI in another:

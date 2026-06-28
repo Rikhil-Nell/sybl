@@ -26,8 +26,12 @@ def test_defaults_validate() -> None:
     assert config.postprocess.trim_fillers is True
     assert config.postprocess.capitalize is True
     assert config.postprocess.ensure_punctuation is False
+    assert config.postprocess.collapse_repeated_words is False
+    assert config.postprocess.normalize_quotes is True
     assert config.ipc.host == "127.0.0.1"
     assert config.ipc.history_size == 100
+    assert config.vocabulary.enabled is True
+    assert config.voice_commands.enabled is True
     assert config.indicator.enabled is True
     assert config.indicator.strategy == "overlay"
     assert config.indicator.size_px == 48

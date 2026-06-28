@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 
 from navi.config.models import NaviConfig
 from navi.providers.base import STTProvider
@@ -48,6 +49,7 @@ def resolve_provider(
     *,
     prefer: str | None = None,
     streaming_required: bool = False,
+    vocabulary: Sequence[str] = (),
 ) -> tuple[str, STTProvider]:
     """Pick a provider at session start using preferred + fallback order."""
     candidates = _build_candidates(
@@ -72,7 +74,7 @@ def resolve_provider(
             skipped.append(f"{name} (no key)")
             continue
 
-        provider = get_provider(name, config)
+        provider = get_provider(name, config, vocabulary=vocabulary)
         if skipped:
             logger.info(
                 "Selected provider %s; skipped: %s",

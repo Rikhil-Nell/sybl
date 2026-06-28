@@ -1,7 +1,7 @@
 # AGENTS.md
 
 > Living source of truth for the Navi project. Read this first. Keep it current.
-> Last updated: 2026-06-26 (Phase 8 complete)
+> Last updated: 2026-06-26 (Phase 9 complete)
 
 ---
 
@@ -46,8 +46,8 @@ The guiding principles:
 
 > Update this section every time the project's reality changes.
 
-- **Phase:** Phase 8 complete — Windows tkinter listening pill wired to daemon
-  state/level; Phase 9 (dictation quality) is next.
+- **Phase:** Phase 9 complete — STT vocabulary hints, extended post-processing,
+  and final-transcript voice commands; Phase 10 (packaging/release) is next.
 - **Code:** `navi/audio/` implements `AudioCaptureSession` (sounddevice callback →
   asyncio queue, 16 kHz mono int16, resampling, dBFS peak metering, debug WAV save).
   `navi/providers/` implements streaming-first STT interface, `ProviderCapabilities`,
@@ -57,13 +57,13 @@ The guiding principles:
   backend, and focus capture at activation. `navi/inject/` implements `TextInjector`,
   Windows clipboard-paste injection with focus restore and clipboard restoration.
   `navi/core/` has `StateMachine`, `DictationController`, `NaviDaemon`, post-processing,
-  `TranscriptHistory`, `EventBus`, and transcribe pipeline. `navi/ipc/` implements
-  NDJSON command/event TCP servers and client.   `navi/tui/` is a Textual app (logs,
+  voice commands, `TranscriptHistory`, `EventBus`, and transcribe pipeline.
+  `navi/config/vocabulary.py` stores STT hint terms. `navi/ipc/` implements
+  NDJSON command/event TCP servers and client. `navi/tui/` is a Textual app (logs,
   status, history, settings, BYOK onboarding). `navi/indicator/` implements
   `CaptureIndicator` (NoOp + Windows tkinter overlay near cursor with RMS level bar).
-  CLI: `navi start`, `navi stop`,
-  `navi status`, `navi tui`, `navi config`, `navi doctor`, `navi audio`, `navi transcribe`,
-  `navi hotkey test`.
+  CLI: `navi start`, `navi stop`, `navi status`, `navi tui`, `navi config`,
+  `navi config vocab`, `navi doctor`, `navi audio`, `navi transcribe`, `navi hotkey test`.
 - **Stack pinned:** `typer`, `pydantic`, `platformdirs`, `keyring`, `tomli-w`,
   `sounddevice`, `numpy`, `soundfile`, `soxr`, `groq`, `tenacity`, `deepgram-sdk`,
   `pynput`, `textual`; dev: `ruff`, `pytest`, `pytest-asyncio`.
@@ -110,6 +110,8 @@ The guiding principles:
 | Phase 6 IPC | **TCP localhost NDJSON** — separate command + event ports; `daemon.json` + PID lock | Cross-platform; asyncio-native; TUI/CLI attach without shared memory. |
 | Phase 7 TUI | **Textual dashboard** — logs, status, history, settings, BYOK onboarding | All config/key writes routed through daemon IPC; keyboard-driven MVP. |
 | Phase 8 indicator | **Windows tkinter overlay** on dedicated thread; `CaptureIndicator` protocol + `NoOpIndicator` elsewhere | Stdlib, no new deps; cursor position via ctypes; show on LISTENING, RMS level bar; degrade to no-op if tk fails (`docs/POPUP-SPIKE.md`). |
+| Phase 9 vocabulary | **STT hints only** — `vocabulary.toml` + Deepgram keyterms + Groq prompt at session start | Names/jargon at transcription source; no post-STT replacement map; term list reused by future LLM pass. |
+| Phase 9 voice commands | **Final-transcript parsing** — `new line`, `scratch that`, etc. | No streaming/wake-word required; runs after postprocess, before inject. |
 
 High-level component map:
 
@@ -177,17 +179,20 @@ Navi/
 │   ├── test_secrets.py
 │   ├── test_single_instance.py
 │   ├── test_transcribe.py
-│   └── test_tui_client.py
+│   ├── test_tui_client.py
+│   ├── test_vocabulary.py
+│   ├── test_voice_commands.py
+│   └── test_provider_vocabulary.py
 └── navi/
     ├── __init__.py
     ├── __main__.py
     ├── cli/               # start, stop, status, tui, config, doctor, audio, transcribe, hotkey
-    ├── config/            # Pydantic models, paths, ConfigManager
+    ├── config/            # Pydantic models, paths, ConfigManager, vocabulary store
     ├── secrets/           # keyring wrapper
     ├── logging/           # setup + RingBufferHandler
     ├── ipc/               # NDJSON command/event servers + client
     ├── audio/             # capture session, devices, resample, metering
-    ├── core/              # daemon, state machine, dictation, history, events, transcribe
+    ├── core/              # daemon, dictation, postprocess, voice commands, transcribe
     ├── providers/         # STT interface, capabilities, manager, Groq, Deepgram
     ├── hotkeys/           # HotkeyManager, bindings, pynput backend, focus capture
     ├── inject/            # TextInjector, Windows clipboard-paste injection

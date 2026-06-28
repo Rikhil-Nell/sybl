@@ -21,6 +21,7 @@ from tenacity import (
 )
 
 from navi.config.models import GroqConfig
+from navi.config.vocabulary import build_groq_vocabulary_prompt
 from navi.providers.errors import (
     STTAuthError,
     STTProviderError,
@@ -37,9 +38,16 @@ logger = logging.getLogger("navi.providers.groq")
 class GroqProvider:
     name = "groq"
 
-    def __init__(self, config: GroqConfig, *, api_key: str | None = None) -> None:
+    def __init__(
+        self,
+        config: GroqConfig,
+        *,
+        api_key: str | None = None,
+        vocabulary: list[str] | None = None,
+    ) -> None:
         self._config = config
         self._api_key = api_key
+        self._vocabulary = list(vocabulary or [])
 
     async def transcribe(
         self,
@@ -98,8 +106,9 @@ class GroqProvider:
         }
         if self._config.language is not None:
             kwargs["language"] = self._config.language
-        if self._config.prompt is not None:
-            kwargs["prompt"] = self._config.prompt
+        prompt = self._effective_prompt()
+        if prompt is not None:
+            kwargs["prompt"] = prompt
 
         try:
             client = Groq(api_key=api_key)
@@ -123,3 +132,10 @@ class GroqProvider:
         if text is None:
             raise STTProviderError("Groq returned no transcript text")
         return str(text)
+
+    def _effective_prompt(self) -> str | None:
+        if self._config.prompt is not None:
+            return self._config.prompt
+        if not self._vocabulary:
+            return None
+        return build_groq_vocabulary_prompt(self._vocabulary)

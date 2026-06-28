@@ -45,6 +45,13 @@ class SettingsScreen(ModalScreen[None]):
             yield Checkbox("Trim filler words", id="trim-fillers")
             yield Checkbox("Capitalize first letter", id="capitalize")
             yield Checkbox("Ensure punctuation", id="ensure-punctuation")
+            yield Checkbox("Collapse repeated words", id="collapse-repeated")
+            yield Checkbox("Normalize quotes/dashes", id="normalize-quotes")
+            yield Checkbox(
+                "Trim space before punctuation",
+                id="trim-punct-space",
+            )
+            yield Checkbox("Voice commands enabled", id="voice-commands-enabled")
             yield Static("", id="settings-status")
         yield Footer()
 
@@ -72,6 +79,20 @@ class SettingsScreen(ModalScreen[None]):
             )
             self.query_one("#ensure-punctuation", Checkbox).value = bool(
                 postprocess.get("ensure_punctuation", False)
+            )
+            self.query_one("#collapse-repeated", Checkbox).value = bool(
+                postprocess.get("collapse_repeated_words", False)
+            )
+            self.query_one("#normalize-quotes", Checkbox).value = bool(
+                postprocess.get("normalize_quotes", True)
+            )
+            self.query_one("#trim-punct-space", Checkbox).value = bool(
+                postprocess.get("trim_space_before_punctuation", True)
+            )
+        voice_commands = config.get("voice_commands", {})
+        if isinstance(voice_commands, dict):
+            self.query_one("#voice-commands-enabled", Checkbox).value = bool(
+                voice_commands.get("enabled", True)
             )
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
@@ -108,6 +129,14 @@ class SettingsScreen(ModalScreen[None]):
             patch = {"postprocess": {"capitalize": event.value}}
         elif event.checkbox.id == "ensure-punctuation":
             patch = {"postprocess": {"ensure_punctuation": event.value}}
+        elif event.checkbox.id == "collapse-repeated":
+            patch = {"postprocess": {"collapse_repeated_words": event.value}}
+        elif event.checkbox.id == "normalize-quotes":
+            patch = {"postprocess": {"normalize_quotes": event.value}}
+        elif event.checkbox.id == "trim-punct-space":
+            patch = {"postprocess": {"trim_space_before_punctuation": event.value}}
+        elif event.checkbox.id == "voice-commands-enabled":
+            patch = {"voice_commands": {"enabled": event.value}}
         else:
             return
         await self.app.ipc.patch_config(patch)

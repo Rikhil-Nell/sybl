@@ -6,6 +6,7 @@ from platformdirs import user_config_dir, user_state_dir
 
 APP_NAME = "navi"
 CONFIG_FILENAME = "config.toml"
+VOCABULARY_FILENAME = "vocabulary.toml"
 LOG_FILENAME = "navi.log"
 
 
@@ -27,3 +28,7 @@ def state_dir() -> Path:
 
 def log_path() -> Path:
     return state_dir() / LOG_FILENAME
+
+
+def vocabulary_path() -> Path:
+    return state_dir() / VOCABULARY_FILENAME
