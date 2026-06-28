@@ -1,7 +1,7 @@
 # AGENTS.md
 
 > Living source of truth for the Navi project. Read this first. Keep it current.
-> Last updated: 2026-06-28 (scratch-that removed from voice commands)
+> Last updated: 2026-06-26 (Phase 10 complete — v0.1.0 OSS release)
 
 ---
 
@@ -46,8 +46,8 @@ The guiding principles:
 
 > Update this section every time the project's reality changes.
 
-- **Phase:** Phase 9 complete — STT vocabulary hints, extended post-processing,
-  and final-transcript voice commands; Phase 10 (packaging/release) is next.
+- **Phase:** Phase 10 complete — v0.1.0 public release on GitHub and PyPI; contributor
+  docs, CI (Windows + Ubuntu), issue/PR templates, and user docs hub shipped.
 - **Code:** `navi/audio/` implements `AudioCaptureSession` (sounddevice callback →
   asyncio queue, 16 kHz mono int16, resampling, dBFS peak metering, debug WAV save).
   `navi/providers/` implements streaming-first STT interface, `ProviderCapabilities`,
@@ -112,6 +112,8 @@ The guiding principles:
 | Phase 8 indicator | **Windows tkinter overlay** on dedicated thread; `CaptureIndicator` protocol + `NoOpIndicator` elsewhere | Stdlib, no new deps; cursor position via ctypes; show on LISTENING, RMS level bar; degrade to no-op if tk fails (`docs/POPUP-SPIKE.md`). |
 | Phase 9 vocabulary | **STT hints only** — `vocabulary.toml` + Deepgram keyterms + Groq prompt at session start | Names/jargon at transcription source; no post-STT replacement map; term list reused by future LLM pass. |
 | Phase 9 voice commands | **Final-transcript parsing** — `new line`, `period`, `comma` | No streaming/wake-word; Esc cancels before STT/inject; no scratch-that erase. |
+| Phase 10 OSS | **MIT license**, PyPI + `pipx`/`uv tool` primary install, GitHub issue/PR templates, CI on Windows+Ubuntu | Hermes-style contributor surface without a separate docs site; `docs/` hub + README landing page. |
+| Phase 10 PyPI | **`release.yml`** on GitHub Release → `uv build` → PyPI trusted publishing (OIDC) | No long-lived PyPI token in repo; maintainers configure pending publisher on PyPI. |
 
 High-level component map:
 
@@ -149,11 +151,26 @@ High-level component map:
 Navi/
 ├── AGENTS.md
 ├── README.md
+├── LICENSE
+├── CONTRIBUTING.md
+├── CODE_OF_CONDUCT.md
+├── SECURITY.md
+├── CHANGELOG.md
+├── .github/
+│   ├── ISSUE_TEMPLATE/
+│   ├── PULL_REQUEST_TEMPLATE.md
+│   └── workflows/          # ci.yml, release.yml
+├── .githooks/              # optional commit-msg hook (no Cursor co-author)
 ├── docs/
+│   ├── getting-started.md
+│   ├── providers.md
+│   ├── configuration.md
+│   ├── permissions.md
+│   ├── DEVELOPMENT.md
 │   ├── DAEMON.md
 │   ├── POPUP-SPIKE.md
 │   ├── ROADMAP.md
-│   └── RESEARCH-NOTES.md   # recovered planning + research-agent rationale
+│   └── RESEARCH-NOTES.md
 ├── main.py                # legacy redirect to CLI
 ├── pyproject.toml
 ├── tests/
