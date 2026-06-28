@@ -1,0 +1,96 @@
+name: Bug report
+description: Something isn't working as expected
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Include `navi doctor` output if you can.
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      placeholder: "3.12.x"
+    validations:
+      required: true
+
+  - type: input
+    id: navi_version
+    attributes:
+      label: Navi version
+      placeholder: "0.1.0 or git commit"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: provider
+    attributes:
+      label: STT provider
+      options:
+        - Groq
+        - Deepgram
+        - Other / none
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. navi start
+        2. Hold hotkey and speak
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: doctor
+    attributes:
+      label: navi doctor output
+      render: shell
+      placeholder: Paste output of `navi doctor`
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Redact API keys. Log file is under your Navi state directory.
+      render: shell
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues before opening this
+          required: true
