@@ -69,8 +69,8 @@ workflow (`.github/workflows/release.yml`).
 2. On PyPI → Your project → Publishing → Add a new pending publisher:
    - Owner: `Rikhil-Nell`
    - Repository: `navi`
-   - Workflow: `release.yml`
-   - Environment: (leave blank unless you use one)
+   - Workflow name: `release.yml`
+   - Environment name: *(leave blank)*
 3. Push a tag and publish a GitHub Release — the workflow builds with `uv build`
    and uploads via OIDC (no long-lived API token required).
 

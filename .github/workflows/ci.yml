@@ -17,6 +17,7 @@ jobs:
     env:
       NO_COLOR: "1"
       TERM: dumb
+      PYTHON_KEYRING_BACKEND: keyrings.alt.file.PlaintextKeyring
     steps:
       - uses: actions/checkout@v4
 
@@ -30,6 +31,10 @@ jobs:
 
       - name: Install dependencies
         run: uv sync
+
+      - name: Install Linux keyring backend
+        if: runner.os == 'Linux'
+        run: uv pip install keyrings.alt
 
       - name: Lint
         run: uv run ruff check navi tests
