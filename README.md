@@ -1,15 +1,15 @@
-# Navi
+# sybl
 
 **Open-source, bring-your-own-key voice dictation.** Put your cursor anywhere, hold a
-global shortcut, speak, and Navi transcribes it fast — then types it in for you.
+global shortcut, speak, and sybl transcribes it fast — then types it in for you.
 
 The open-source alternative to closed dictation tools like Wispr Flow. No subscription,
-no Navi-hosted backend: your audio goes straight to the STT provider you choose.
+no sybl-hosted backend: your audio goes straight to the STT provider you choose.
 
-[![CI](https://github.com/Rikhil-Nell/navi/actions/workflows/ci.yml/badge.svg)](https://github.com/Rikhil-Nell/navi/actions/workflows/ci.yml)
+[![CI](https://github.com/Rikhil-Nell/sybl/actions/workflows/ci.yml/badge.svg)](https://github.com/Rikhil-Nell/sybl/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![PyPI version](https://img.shields.io/pypi/v/navi.svg)](https://pypi.org/project/navi/)
+[![PyPI version](https://img.shields.io/pypi/v/sybl.svg)](https://pypi.org/project/sybl/)
 
 ## Features
 
@@ -18,20 +18,20 @@ no Navi-hosted backend: your audio goes straight to the STT provider you choose.
 - **Types where you were focused** — clipboard-paste injection on Windows
 - **Daemon + TUI** — background service with a Textual dashboard for logs, history, and settings
 - **Listening pill** — small overlay near your cursor while dictating (Windows)
-- **Custom vocabulary** — STT hints for names and jargon via `navi config vocab`
+- **Custom vocabulary** — STT hints for names and jargon via `sybl config vocab`
 - **Voice commands** — `new line`, `period`, `comma` in final transcripts
 - **Local-first** — no telemetry; API keys in the OS keyring
 
 ## Install
 
 ```powershell
-pipx install navi
+pipx install sybl
 ```
 
 Or with [uv](https://docs.astral.sh/uv/):
 
 ```powershell
-uv tool install navi
+uv tool install sybl
 ```
 
 Requires **Python 3.12+**. Windows is the primary supported platform for the full
@@ -40,16 +40,16 @@ core loop (hotkeys, injection, indicator).
 ## Quick start
 
 ```powershell
-navi doctor
-navi config init
-navi config set-key groq
-navi start
+sybl doctor
+sybl config init
+sybl config set-key groq
+sybl start
 ```
 
 In another terminal:
 
 ```powershell
-navi tui
+sybl tui
 ```
 
 Hold **Ctrl+Alt+Space** (default), speak, release — the transcript is pasted into

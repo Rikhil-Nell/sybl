@@ -1,7 +1,7 @@
-# Navi — Research & Planning Notes
+# sybl — Research & Planning Notes
 
 > **Why this file exists:** A long planning session (2026-06-26, ~1:17–3:00 AM IST) in
-> the Navi Cursor chat produced architecture decisions, research-agent cross-validation,
+> the sybl Cursor chat produced architecture decisions, research-agent cross-validation,
 > and phased technical review. The **work landed in the repo** (`AGENTS.md`,
 > `docs/ROADMAP.md`, Phase 0 code), but the **chat UI no longer shows that history**
 > for the user — likely a Cursor display/persistence bug. This document recovers the
@@ -15,14 +15,14 @@
 
 | Step | What |
 |------|------|
-| 1 | User described Navi (open-source Wispr Flow, BYOK, global shortcut, popup TBD, PTT + double-press toggle, TUI daemon). Asked for self-updating `AGENTS.md`, a Cursor rule, and ordered roadmap (no time estimates). |
+| 1 | User described sybl (open-source Wispr Flow, BYOK, global shortcut, popup TBD, PTT + double-press toggle, TUI daemon). Asked for self-updating `AGENTS.md`, a Cursor rule, and ordered roadmap (no time estimates). |
 | 2 | Agent created `AGENTS.md`, `.cursor/rules/maintain-agents-md.mdc`, `docs/ROADMAP.md` (Phases 0–10). |
 | 3 | User pasted **research agent cross-validation** (~2:40 AM) — daemon as SSOT, streaming-first, Windows depth-first, post-processing early, etc. |
 | 4 | Agent updated `AGENTS.md` + `ROADMAP.md` (Phase 5.5, Windows-first, Deepgram reference / Groq first signal). |
 | 5 | User pasted **detailed Phase 1–5 technical review** (sounddevice callback+queue, async STT interface, ProviderManager, pynput limits, Wispr native injection reality). |
 | 6 | Agent folded that into `AGENTS.md` §4 and `ROADMAP.md` Phases 1–5; answered asyncio vs threading, Phase 4/5 ordering, Wispr comparison. |
 | 7 | User asked to plan Phase 0; agent produced Phase 0 plan. |
-| 8 | User approved implementation; **Phase 0 completed** — full `navi/` package, CLI, config, keyring, logging, tests. |
+| 8 | User approved implementation; **Phase 0 completed** — full `sybl/` package, CLI, config, keyring, logging, tests. |
 | 9 | User noticed missing chat history; agent explained distill-into-repo vs missing transcript doc. |
 
 ---
@@ -81,7 +81,7 @@
 |------|----------------|
 | Interface | **Async from day one** — `async def transcribe(audio: bytes \| AsyncIterable[bytes]) -> AsyncGenerator[TranscriptionResult, None]` with `text`, `is_final`, optional `confidence`. |
 | First provider | Groq Whisper large-v3 batch behind streaming interface; configurable `whisper-large-v3` vs `turbo`. |
-| Keys | `keyring.get_password("navi", "groq_api_key")` pattern per provider. |
+| Keys | `keyring.get_password("sybl", "groq_api_key")` pattern per provider. |
 | Errors | Custom hierarchy (`STTError`, `STTRateLimitError`, …) + **`tenacity`** for transient retries. |
 | Config | **Pydantic** validation (adopted in Phase 0). |
 | Milestone | Record → Groq → **clean text + metadata** in terminal. |
@@ -152,7 +152,7 @@ Phase 6 (daemon IPC) can follow a working **single-process** headless loop.
 
 Phase 0 was implemented after planning:
 
-- `navi` CLI: `start`, `tui` (stub), `config`, `doctor`
+- `sybl` CLI: `start`, `tui` (stub), `config`, `doctor`
 - Pydantic config + TOML via `ConfigManager`
 - Keyring secrets for groq/deepgram/assemblyai/gladia
 - Logging: file + console + ring buffer

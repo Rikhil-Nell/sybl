@@ -1,10 +1,10 @@
 # Popup / Capture Indicator — Spike Notes
 
-> Phase 8 research. Windows-first decision for Navi MVP.
+> Phase 8 research. Windows-first decision for sybl MVP.
 
 ## Problem
 
-Users need a visible cue that Navi is listening while push-to-talk is held. The TUI
+Users need a visible cue that sybl is listening while push-to-talk is held. The TUI
 only helps when attached; the popup must work from any focused app.
 
 ## Options considered (Windows)
@@ -30,7 +30,7 @@ macOS/Linux: `CaptureIndicator` protocol + `NoOpIndicator` until platform impls 
 
 ## Integration
 
-- [`navi/core/daemon.py`](../navi/core/daemon.py) owns the indicator alongside hotkeys
+- [`sybl/core/daemon.py`](../sybl/core/daemon.py) owns the indicator alongside hotkeys
 - Reuses level polling already used for IPC/TUI (`_poll_levels`)
 - Config: `[indicator]` in `config.toml` (`enabled`, `strategy`, `size_px`, offsets)
 

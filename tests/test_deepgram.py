@@ -14,13 +14,13 @@ from deepgram.listen.v1.types import (
     ListenV1ResultsMetadataModelInfo,
 )
 
-from navi.config.models import DeepgramConfig
-from navi.providers.deepgram import (
+from sybl.config.models import DeepgramConfig
+from sybl.providers.deepgram import (
     DeepgramProvider,
     _map_api_error,
     _result_from_listen,
 )
-from navi.providers.errors import STTAuthError, STTProviderError, STTRateLimitError
+from sybl.providers.errors import STTAuthError, STTProviderError, STTRateLimitError
 
 
 def _sample_results(*, is_final: bool, transcript: str) -> ListenV1Results:
@@ -113,7 +113,7 @@ def test_map_api_error_rate_limit() -> None:
 def test_deepgram_batch_api_error() -> None:
     provider = DeepgramProvider(DeepgramConfig(), api_key="test-key")
     exc = ApiError(status_code=400, body="bad request")
-    with patch("navi.providers.deepgram.DeepgramClient") as mock_client:
+    with patch("sybl.providers.deepgram.DeepgramClient") as mock_client:
         mock_client.return_value.listen.v1.media.transcribe_file.side_effect = exc
         with pytest.raises(STTProviderError, match="Deepgram API error"):
             provider._transcribe_file_once("test-key", b"RIFFfake")

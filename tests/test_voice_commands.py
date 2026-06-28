@@ -1,7 +1,7 @@
 """Tests for final-transcript voice command parsing."""
 
-from navi.config.models import VoiceCommandsConfig
-from navi.core.voice_commands import apply_voice_commands
+from sybl.config.models import VoiceCommandsConfig
+from sybl.core.voice_commands import apply_voice_commands
 
 
 def test_new_line_inserts_line_break() -> None:

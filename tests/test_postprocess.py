@@ -1,7 +1,7 @@
 """Tests for post-processing pipeline."""
 
-from navi.config.models import PostProcessConfig
-from navi.core.postprocess import (
+from sybl.config.models import PostProcessConfig
+from sybl.core.postprocess import (
     capitalize_first,
     ensure_terminal_punctuation,
     normalize_whitespace,
@@ -47,25 +47,25 @@ def test_process_text_with_punctuation_enabled() -> None:
 
 
 def test_normalize_quotes() -> None:
-    from navi.core.postprocess import normalize_quotes
+    from sybl.core.postprocess import normalize_quotes
 
     assert normalize_quotes("“hello”") == '"hello"'
 
 
 def test_trim_space_before_punctuation() -> None:
-    from navi.core.postprocess import trim_space_before_punctuation
+    from sybl.core.postprocess import trim_space_before_punctuation
 
     assert trim_space_before_punctuation("hello .") == "hello."
 
 
 def test_collapse_repeated_words() -> None:
-    from navi.core.postprocess import collapse_repeated_words
+    from sybl.core.postprocess import collapse_repeated_words
 
     assert collapse_repeated_words("the the cat") == "the cat"
 
 
 def test_collapse_duplicate_punctuation() -> None:
-    from navi.core.postprocess import collapse_duplicate_punctuation
+    from sybl.core.postprocess import collapse_duplicate_punctuation
 
     assert collapse_duplicate_punctuation("hello,, world..") == "hello, world."
 

@@ -1,6 +1,6 @@
 # Permissions
 
-Navi needs microphone access for dictation and (on Windows) the ability to paste
+sybl needs microphone access for dictation and (on Windows) the ability to paste
 text into other applications.
 
 ## Windows (supported)
@@ -9,14 +9,14 @@ text into other applications.
 
 - Grant microphone access in **Settings → Privacy & security → Microphone**.
 - Ensure your terminal / Python is allowed if prompted.
-- Run `navi doctor` and `navi audio record --seconds 3` to verify capture.
+- Run `sybl doctor` and `sybl audio record --seconds 3` to verify capture.
 
-Bluetooth headsets can disconnect mid-session; Navi handles stream errors gracefully
+Bluetooth headsets can disconnect mid-session; sybl handles stream errors gracefully
 but you may need to restart the daemon after reconnecting.
 
 ### Text injection
 
-Navi's primary injection strategy is **clipboard set + simulated Ctrl+V** (`SendInput`).
+sybl's primary injection strategy is **clipboard set + simulated Ctrl+V** (`SendInput`).
 This works in most standard text fields without elevated privileges.
 
 Known limitations:
@@ -30,7 +30,7 @@ If paste fails, set `inject.enabled = false` to debug STT only, or copy from TUI
 ### Global hotkeys
 
 `pynput` listens for system-wide key events. Admin-only apps or aggressive security
-software may interfere. Test with `navi hotkey test`.
+software may interfere. Test with `sybl hotkey test`.
 
 ## macOS
 
@@ -55,7 +55,7 @@ Expected future considerations:
 
 - API keys: OS keyring only
 - Audio: sent to your configured STT provider during active sessions only
-- Transcripts: kept in local daemon history (configurable size); not sent to Navi servers
+- Transcripts: kept in local daemon history (configurable size); not sent to sybl servers
 - Debug WAV: optional last recording saved locally when `save_last_recording = true`
 
 See [SECURITY.md](../SECURITY.md) for vulnerability reporting.

@@ -3,9 +3,9 @@
 import logging
 from pathlib import Path
 
-from navi.config import LoggingConfig
-from navi.logging import setup_logging
-from navi.logging.ring_buffer import RingBufferHandler
+from sybl.config import LoggingConfig
+from sybl.logging import setup_logging
+from sybl.logging.ring_buffer import RingBufferHandler
 
 
 def test_ring_buffer_respects_maxlen() -> None:
@@ -27,7 +27,7 @@ def test_setup_logging_writes_to_file(tmp_log_path: Path) -> None:
     config = LoggingConfig(level="INFO", ring_buffer_size=10)
     ring_handler = setup_logging(config, log_file=tmp_log_path)
 
-    logger = logging.getLogger("navi.test")
+    logger = logging.getLogger("sybl.test")
     logger.info("hello from test")
 
     assert tmp_log_path.exists()

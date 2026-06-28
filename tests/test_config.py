@@ -4,11 +4,11 @@ from pathlib import Path
 
 import pytest
 
-from navi.config import ConfigError, ConfigManager, NaviConfig
+from sybl.config import ConfigError, ConfigManager, SyblConfig
 
 
 def test_defaults_validate() -> None:
-    config = NaviConfig()
+    config = SyblConfig()
     assert config.provider.preferred == "groq"
     assert config.provider.groq.model == "whisper-large-v3-turbo"
     assert config.audio.sample_rate == 16000
@@ -54,7 +54,7 @@ def test_init_creates_config_file(tmp_config_path: Path) -> None:
 
 def test_round_trip_save_load(tmp_config_path: Path) -> None:
     manager = ConfigManager(tmp_config_path)
-    original = NaviConfig()
+    original = SyblConfig()
     original.provider.preferred = "deepgram"
     original.audio.device = "Microphone (USB)"
     manager.save(original)

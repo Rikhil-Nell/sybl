@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from navi.secrets import (
+from sybl.secrets import (
     SecretsError,
     delete_provider_key,
     get_provider_key,
@@ -30,10 +30,10 @@ def keyring_backend(fake_keyring: dict[tuple[str, str], str]):
         fake_keyring.pop((service, username), None)
 
     with (
-        patch("navi.secrets.store.keyring.set_password", side_effect=set_password),
-        patch("navi.secrets.store.keyring.get_password", side_effect=get_password),
+        patch("sybl.secrets.store.keyring.set_password", side_effect=set_password),
+        patch("sybl.secrets.store.keyring.get_password", side_effect=get_password),
         patch(
-            "navi.secrets.store.keyring.delete_password",
+            "sybl.secrets.store.keyring.delete_password",
             side_effect=delete_password,
         ),
     ):

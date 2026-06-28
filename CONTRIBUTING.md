@@ -1,6 +1,6 @@
-# Contributing to Navi
+# Contributing to sybl
 
-Thanks for helping make Navi better. This project is early but contributor-ready —
+Thanks for helping make sybl better. This project is early but contributor-ready —
 issues, docs fixes, and PRs are welcome.
 
 ## Before you start
@@ -15,10 +15,10 @@ issues, docs fixes, and PRs are welcome.
 Requirements: **Python 3.12+**, [uv](https://docs.astral.sh/uv/).
 
 ```powershell
-git clone https://github.com/Rikhil-Nell/navi.git
-cd navi
+git clone https://github.com/Rikhil-Nell/sybl.git
+cd sybl
 uv sync
-uv run navi doctor
+uv run sybl doctor
 ```
 
 ## Running tests
@@ -26,7 +26,7 @@ uv run navi doctor
 Unit tests (no mic or live API keys):
 
 ```powershell
-uv run ruff check navi tests
+uv run ruff check sybl tests
 uv run pytest -m "not integration" -q
 ```
 
@@ -65,10 +65,10 @@ workflow (`.github/workflows/release.yml`).
 
 **One-time PyPI trusted publishing setup:**
 
-1. Create the `navi` project on [PyPI](https://pypi.org/) (or claim the name).
+1. Create the `sybl` project on [PyPI](https://pypi.org/) (or claim the name).
 2. On PyPI → Your project → Publishing → Add a new pending publisher:
    - Owner: `Rikhil-Nell`
-   - Repository: `navi`
+   - Repository: `sybl`
    - Workflow name: `release.yml`
    - Environment name: *(leave blank)*
 3. Push a tag and publish a GitHub Release — the workflow builds with `uv build`
@@ -78,8 +78,8 @@ For local packaging smoke tests:
 
 ```powershell
 uv build
-uv tool install dist/navi-*.whl --force
-navi doctor
+uv tool install dist/sybl-*.whl --force
+sybl doctor
 ```
 
 ## Code of conduct

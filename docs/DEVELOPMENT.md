@@ -7,22 +7,22 @@ living architecture map see [AGENTS.md](../AGENTS.md). For what's next see
 ## Local setup
 
 ```powershell
-git clone https://github.com/Rikhil-Nell/navi.git
-cd navi
+git clone https://github.com/Rikhil-Nell/sybl.git
+cd sybl
 uv sync
-uv run navi doctor
+uv run sybl doctor
 ```
 
 ## Commands
 
 ```powershell
 # Lint + unit tests (CI parity)
-uv run ruff check navi tests
+uv run ruff check sybl tests
 uv run pytest -m "not integration" -q
 
 # Run from source
-uv run navi start
-uv run navi tui
+uv run sybl start
+uv run sybl tui
 
 # Integration (manual — mic + API keys)
 uv run pytest -m integration

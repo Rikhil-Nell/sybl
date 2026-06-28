@@ -2,7 +2,7 @@
 
 import pytest
 
-from navi.hotkeys.bindings import BindingParseError, parse_binding
+from sybl.hotkeys.bindings import BindingParseError, parse_binding
 
 
 def test_parse_default_binding() -> None:

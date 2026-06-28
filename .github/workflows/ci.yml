@@ -17,7 +17,6 @@ jobs:
     env:
       NO_COLOR: "1"
       TERM: dumb
-      PYTHON_KEYRING_BACKEND: keyrings.alt.file.PlaintextKeyring
     steps:
       - uses: actions/checkout@v4
 
@@ -37,10 +36,12 @@ jobs:
         run: uv pip install keyrings.alt
 
       - name: Lint
-        run: uv run ruff check navi tests
+        run: uv run ruff check sybl tests
 
       - name: Unit tests (Linux)
         if: runner.os == 'Linux'
+        env:
+          PYTHON_KEYRING_BACKEND: keyrings.alt.file.PlaintextKeyring
         run: xvfb-run uv run pytest -m "not integration" -q --ignore=tests/test_inject.py
 
       - name: Unit tests (Windows)

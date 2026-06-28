@@ -1,12 +1,12 @@
 name: Feature request
-description: Suggest an idea for Navi
+description: Suggest an idea for sybl
 title: "[Feature]: "
 labels: ["enhancement"]
 body:
   - type: markdown
     attributes:
       value: |
-        Check [docs/ROADMAP.md](https://github.com/Rikhil-Nell/navi/blob/main/docs/ROADMAP.md)
+        Check [docs/ROADMAP.md](https://github.com/Rikhil-Nell/sybl/blob/main/docs/ROADMAP.md)
         before filing — some items may already be planned.
 
   - type: textarea
@@ -48,7 +48,7 @@ body:
     attributes:
       label: Checklist
       options:
-        - label: This aligns with Navi's BYOK, local-first mission (no hosted backend)
+        - label: This aligns with sybl's BYOK, local-first mission (no hosted backend)
           required: true
         - label: I searched existing issues before opening this
           required: true

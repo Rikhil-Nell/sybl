@@ -7,9 +7,9 @@ import asyncio
 import pytest
 from pynput import keyboard
 
-from navi.config.models import HotkeyConfig
-from navi.hotkeys.base import HotkeyEvent
-from navi.hotkeys.pynput_backend import PynputHotkeyManager, key_to_semantic
+from sybl.config.models import HotkeyConfig
+from sybl.hotkeys.base import HotkeyEvent
+from sybl.hotkeys.pynput_backend import PynputHotkeyManager, key_to_semantic
 
 
 def test_key_to_semantic_modifiers() -> None:

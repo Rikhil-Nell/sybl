@@ -7,18 +7,18 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from navi.config.models import HotkeyConfig, InjectConfig, NaviConfig
-from navi.core.dictation import DictationController
-from navi.core.state import SessionState
-from navi.core.transcribe import TranscribeOutcome
-from navi.hotkeys.base import HotkeyEvent
-from navi.hotkeys.focus import FocusTarget
-from navi.inject.base import InjectError
+from sybl.config.models import HotkeyConfig, InjectConfig, SyblConfig
+from sybl.core.dictation import DictationController
+from sybl.core.state import SessionState
+from sybl.core.transcribe import TranscribeOutcome
+from sybl.hotkeys.base import HotkeyEvent
+from sybl.hotkeys.focus import FocusTarget
+from sybl.inject.base import InjectError
 
 
 @pytest.fixture
-def navi_config() -> NaviConfig:
-    return NaviConfig(
+def sybl_config() -> SyblConfig:
+    return SyblConfig(
         hotkey=HotkeyConfig(min_duration_ms=250, streaming="off"),
         inject=InjectConfig(enabled=True),
     )
@@ -43,20 +43,20 @@ def _mock_session(*, duration_seconds: float) -> MagicMock:
 
 @pytest.mark.asyncio
 async def test_activate_captures_focus_and_starts_listening(
-    navi_config: NaviConfig,
+    sybl_config: SyblConfig,
     mock_injector: AsyncMock,
 ) -> None:
-    controller = DictationController(navi_config, injector=mock_injector)
+    controller = DictationController(sybl_config, injector=mock_injector)
     mock_session = _mock_session(duration_seconds=1.0)
     focus = FocusTarget(hwnd=123, pid=456, title="Notepad")
 
     with (
-        patch("navi.core.dictation.capture_foreground", return_value=focus),
+        patch("sybl.core.dictation.capture_foreground", return_value=focus),
         patch(
-            "navi.core.dictation.resolve_provider",
+            "sybl.core.dictation.resolve_provider",
             return_value=("groq", MagicMock()),
         ),
-        patch("navi.core.dictation.AudioCaptureSession", return_value=mock_session),
+        patch("sybl.core.dictation.AudioCaptureSession", return_value=mock_session),
     ):
         await controller.handle_hotkey_event(HotkeyEvent.ACTIVATE)
 
@@ -67,10 +67,10 @@ async def test_activate_captures_focus_and_starts_listening(
 
 @pytest.mark.asyncio
 async def test_deactivate_applies_postprocess_before_inject(
-    navi_config: NaviConfig,
+    sybl_config: SyblConfig,
     mock_injector: AsyncMock,
 ) -> None:
-    controller = DictationController(navi_config, injector=mock_injector)
+    controller = DictationController(sybl_config, injector=mock_injector)
     mock_session = _mock_session(duration_seconds=1.0)
     focus = FocusTarget(hwnd=123, pid=456, title="Notepad")
     outcome = TranscribeOutcome(
@@ -83,14 +83,14 @@ async def test_deactivate_applies_postprocess_before_inject(
     )
 
     with (
-        patch("navi.core.dictation.capture_foreground", return_value=focus),
+        patch("sybl.core.dictation.capture_foreground", return_value=focus),
         patch(
-            "navi.core.dictation.resolve_provider",
+            "sybl.core.dictation.resolve_provider",
             return_value=("groq", MagicMock()),
         ),
-        patch("navi.core.dictation.AudioCaptureSession", return_value=mock_session),
+        patch("sybl.core.dictation.AudioCaptureSession", return_value=mock_session),
         patch(
-            "navi.core.dictation.transcribe_pcm",
+            "sybl.core.dictation.transcribe_pcm",
             AsyncMock(return_value=outcome),
         ),
     ):
@@ -104,7 +104,7 @@ async def test_deactivate_applies_postprocess_before_inject(
 async def test_deactivate_awaits_running_stream_task(
     mock_injector: AsyncMock,
 ) -> None:
-    config = NaviConfig(
+    config = SyblConfig(
         hotkey=HotkeyConfig(min_duration_ms=250, streaming="on"),
         inject=InjectConfig(enabled=True),
     )
@@ -126,14 +126,14 @@ async def test_deactivate_awaits_running_stream_task(
         return outcome
 
     with (
-        patch("navi.core.dictation.capture_foreground", return_value=focus),
+        patch("sybl.core.dictation.capture_foreground", return_value=focus),
         patch(
-            "navi.core.dictation.resolve_provider",
+            "sybl.core.dictation.resolve_provider",
             return_value=("deepgram", MagicMock()),
         ),
-        patch("navi.core.dictation.AudioCaptureSession", return_value=mock_session),
+        patch("sybl.core.dictation.AudioCaptureSession", return_value=mock_session),
         patch(
-            "navi.core.dictation.transcribe_stream",
+            "sybl.core.dictation.transcribe_stream",
             side_effect=slow_stream,
         ),
     ):
@@ -154,10 +154,10 @@ async def test_deactivate_awaits_running_stream_task(
 
 @pytest.mark.asyncio
 async def test_deactivate_injects_transcript_and_returns_idle(
-    navi_config: NaviConfig,
+    sybl_config: SyblConfig,
     mock_injector: AsyncMock,
 ) -> None:
-    controller = DictationController(navi_config, injector=mock_injector)
+    controller = DictationController(sybl_config, injector=mock_injector)
     mock_session = _mock_session(duration_seconds=1.0)
     focus = FocusTarget(hwnd=123, pid=456, title="Notepad")
     outcome = TranscribeOutcome(
@@ -170,14 +170,14 @@ async def test_deactivate_injects_transcript_and_returns_idle(
     )
 
     with (
-        patch("navi.core.dictation.capture_foreground", return_value=focus),
+        patch("sybl.core.dictation.capture_foreground", return_value=focus),
         patch(
-            "navi.core.dictation.resolve_provider",
+            "sybl.core.dictation.resolve_provider",
             return_value=("groq", MagicMock()),
         ),
-        patch("navi.core.dictation.AudioCaptureSession", return_value=mock_session),
+        patch("sybl.core.dictation.AudioCaptureSession", return_value=mock_session),
         patch(
-            "navi.core.dictation.transcribe_pcm",
+            "sybl.core.dictation.transcribe_pcm",
             AsyncMock(return_value=outcome),
         ) as mock_transcribe,
     ):
@@ -193,7 +193,7 @@ async def test_deactivate_injects_transcript_and_returns_idle(
 async def test_deactivate_skips_inject_when_disabled(
     mock_injector: AsyncMock,
 ) -> None:
-    config = NaviConfig(
+    config = SyblConfig(
         hotkey=HotkeyConfig(min_duration_ms=250, streaming="off"),
         inject=InjectConfig(enabled=False),
     )
@@ -209,14 +209,14 @@ async def test_deactivate_skips_inject_when_disabled(
     )
 
     with (
-        patch("navi.core.dictation.capture_foreground", return_value=FocusTarget()),
+        patch("sybl.core.dictation.capture_foreground", return_value=FocusTarget()),
         patch(
-            "navi.core.dictation.resolve_provider",
+            "sybl.core.dictation.resolve_provider",
             return_value=("groq", MagicMock()),
         ),
-        patch("navi.core.dictation.AudioCaptureSession", return_value=mock_session),
+        patch("sybl.core.dictation.AudioCaptureSession", return_value=mock_session),
         patch(
-            "navi.core.dictation.transcribe_pcm",
+            "sybl.core.dictation.transcribe_pcm",
             AsyncMock(return_value=outcome),
         ),
     ):
@@ -228,11 +228,11 @@ async def test_deactivate_skips_inject_when_disabled(
 
 @pytest.mark.asyncio
 async def test_inject_failure_moves_to_error_then_idle(
-    navi_config: NaviConfig,
+    sybl_config: SyblConfig,
     mock_injector: AsyncMock,
 ) -> None:
     mock_injector.inject.side_effect = InjectError("paste failed")
-    controller = DictationController(navi_config, injector=mock_injector)
+    controller = DictationController(sybl_config, injector=mock_injector)
     mock_session = _mock_session(duration_seconds=1.0)
     outcome = TranscribeOutcome(
         text="hello",
@@ -244,14 +244,14 @@ async def test_inject_failure_moves_to_error_then_idle(
     )
 
     with (
-        patch("navi.core.dictation.capture_foreground", return_value=FocusTarget()),
+        patch("sybl.core.dictation.capture_foreground", return_value=FocusTarget()),
         patch(
-            "navi.core.dictation.resolve_provider",
+            "sybl.core.dictation.resolve_provider",
             return_value=("groq", MagicMock()),
         ),
-        patch("navi.core.dictation.AudioCaptureSession", return_value=mock_session),
+        patch("sybl.core.dictation.AudioCaptureSession", return_value=mock_session),
         patch(
-            "navi.core.dictation.transcribe_pcm",
+            "sybl.core.dictation.transcribe_pcm",
             AsyncMock(return_value=outcome),
         ),
     ):
@@ -264,20 +264,20 @@ async def test_inject_failure_moves_to_error_then_idle(
 
 @pytest.mark.asyncio
 async def test_short_capture_skips_stt(
-    navi_config: NaviConfig,
+    sybl_config: SyblConfig,
     mock_injector: AsyncMock,
 ) -> None:
-    controller = DictationController(navi_config, injector=mock_injector)
+    controller = DictationController(sybl_config, injector=mock_injector)
     mock_session = _mock_session(duration_seconds=0.05)
 
     with (
-        patch("navi.core.dictation.capture_foreground", return_value=FocusTarget()),
+        patch("sybl.core.dictation.capture_foreground", return_value=FocusTarget()),
         patch(
-            "navi.core.dictation.resolve_provider",
+            "sybl.core.dictation.resolve_provider",
             return_value=("groq", MagicMock()),
         ),
-        patch("navi.core.dictation.AudioCaptureSession", return_value=mock_session),
-        patch("navi.core.dictation.transcribe_pcm", AsyncMock()) as mock_transcribe,
+        patch("sybl.core.dictation.AudioCaptureSession", return_value=mock_session),
+        patch("sybl.core.dictation.transcribe_pcm", AsyncMock()) as mock_transcribe,
     ):
         await controller.handle_hotkey_event(HotkeyEvent.ACTIVATE)
         await controller.handle_hotkey_event(HotkeyEvent.DEACTIVATE)
@@ -289,19 +289,19 @@ async def test_short_capture_skips_stt(
 
 @pytest.mark.asyncio
 async def test_cancel_discards_capture(
-    navi_config: NaviConfig,
+    sybl_config: SyblConfig,
     mock_injector: AsyncMock,
 ) -> None:
-    controller = DictationController(navi_config, injector=mock_injector)
+    controller = DictationController(sybl_config, injector=mock_injector)
     mock_session = _mock_session(duration_seconds=1.0)
 
     with (
-        patch("navi.core.dictation.capture_foreground", return_value=FocusTarget()),
+        patch("sybl.core.dictation.capture_foreground", return_value=FocusTarget()),
         patch(
-            "navi.core.dictation.resolve_provider",
+            "sybl.core.dictation.resolve_provider",
             return_value=("groq", MagicMock()),
         ),
-        patch("navi.core.dictation.AudioCaptureSession", return_value=mock_session),
+        patch("sybl.core.dictation.AudioCaptureSession", return_value=mock_session),
     ):
         await controller.handle_hotkey_event(HotkeyEvent.ACTIVATE)
         await controller.handle_hotkey_event(HotkeyEvent.CANCEL)

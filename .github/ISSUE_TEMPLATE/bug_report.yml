@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for the report. Include `navi doctor` output if you can.
+        Thanks for the report. Include `sybl doctor` output if you can.
 
   - type: dropdown
     id: os
@@ -29,9 +29,9 @@ body:
       required: true
 
   - type: input
-    id: navi_version
+    id: sybl_version
     attributes:
-      label: Navi version
+      label: sybl version
       placeholder: "0.1.0 or git commit"
     validations:
       required: true
@@ -53,7 +53,7 @@ body:
     attributes:
       label: Steps to reproduce
       placeholder: |
-        1. navi start
+        1. sybl start
         2. Hold hotkey and speak
         3. ...
     validations:
@@ -76,15 +76,15 @@ body:
   - type: textarea
     id: doctor
     attributes:
-      label: navi doctor output
+      label: sybl doctor output
       render: shell
-      placeholder: Paste output of `navi doctor`
+      placeholder: Paste output of `sybl doctor`
 
   - type: textarea
     id: logs
     attributes:
       label: Relevant logs
-      description: Redact API keys. Log file is under your Navi state directory.
+      description: Redact API keys. Log file is under your sybl state directory.
       render: shell
 
   - type: checkboxes

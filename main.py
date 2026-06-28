@@ -1,6 +1,6 @@
-"""Legacy entrypoint — use `navi` CLI instead."""
+"""Legacy entrypoint — use `sybl` CLI instead."""
 
-from navi.cli import app
+from sybl.cli import app
 
 if __name__ == "__main__":
     app()

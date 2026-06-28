@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from typer.testing import CliRunner
 
-from navi.cli import app
+from sybl.cli import app
 
 runner = CliRunner()
 
@@ -13,7 +13,7 @@ runner = CliRunner()
 def test_help() -> None:
     result = runner.invoke(app, ["--help"])
     assert result.exit_code == 0
-    assert "Navi" in result.stdout
+    assert "sybl" in result.stdout
 
 
 def test_start_help() -> None:
@@ -25,8 +25,8 @@ def test_start_help() -> None:
 def test_config_init_and_show(tmp_path: Path) -> None:
     config_file = tmp_path / "config.toml"
 
-    with patch("navi.cli.config_cmd.ConfigManager") as mock_manager:
-        from navi.config import ConfigManager
+    with patch("sybl.cli.config_cmd.ConfigManager") as mock_manager:
+        from sybl.config import ConfigManager
 
         mock_manager.return_value = ConfigManager(config_file)
 
@@ -46,14 +46,14 @@ def test_doctor_runs() -> None:
 
 
 def test_status_when_daemon_down() -> None:
-    with patch("navi.cli.status.is_daemon_running", return_value=False):
+    with patch("sybl.cli.status.is_daemon_running", return_value=False):
         result = runner.invoke(app, ["status"])
     assert result.exit_code == 1
     assert "not running" in (result.stdout + result.stderr).lower()
 
 
 def test_tui_requires_daemon() -> None:
-    with patch("navi.cli.tui.is_daemon_running", return_value=False):
+    with patch("sybl.cli.tui.is_daemon_running", return_value=False):
         result = runner.invoke(app, ["tui"])
     assert result.exit_code == 1
     assert "not running" in (result.stdout + result.stderr).lower()

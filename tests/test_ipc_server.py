@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from navi.ipc.client import IpcClient
-from navi.ipc.protocol import CommandName, DaemonInfo
-from navi.ipc.server import IpcServer
+from sybl.ipc.client import IpcClient
+from sybl.ipc.protocol import CommandName, DaemonInfo
+from sybl.ipc.server import IpcServer
 
 
 @pytest.mark.asyncio

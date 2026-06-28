@@ -14,4 +14,4 @@ def tmp_config_path(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def tmp_log_path(tmp_path: Path) -> Path:
-    return tmp_path / "navi.log"
+    return tmp_path / "sybl.log"

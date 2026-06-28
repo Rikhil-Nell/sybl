@@ -6,11 +6,11 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from navi.config.models import NaviConfig
-from navi.core.state import InvalidTransitionError, SessionState, StateMachine
-from navi.core.transcribe import transcribe_pcm
-from navi.providers.errors import STTProviderError
-from navi.providers.types import TranscriptionResult
+from sybl.config.models import SyblConfig
+from sybl.core.state import InvalidTransitionError, SessionState, StateMachine
+from sybl.core.transcribe import transcribe_pcm
+from sybl.providers.errors import STTProviderError
+from sybl.providers.types import TranscriptionResult
 
 
 def test_state_machine_starts_idle() -> None:
@@ -41,7 +41,7 @@ def test_state_machine_reset() -> None:
 
 @pytest.mark.asyncio
 async def test_transcribe_pcm_collects_final_text() -> None:
-    config = NaviConfig()
+    config = SyblConfig()
     pcm = b"\x00\x01" * 1600
 
     async def fake_transcribe(_audio):
@@ -52,7 +52,7 @@ async def test_transcribe_pcm_collects_final_text() -> None:
     mock_provider.name = "groq"
 
     with patch(
-        "navi.core.transcribe.resolve_provider",
+        "sybl.core.transcribe.resolve_provider",
         return_value=("groq", mock_provider),
     ):
         outcome = await transcribe_pcm(
@@ -72,7 +72,7 @@ async def test_transcribe_pcm_collects_final_text() -> None:
 
 @pytest.mark.asyncio
 async def test_transcribe_pcm_propagates_stt_errors() -> None:
-    config = NaviConfig()
+    config = SyblConfig()
     pcm = b"\x00\x01" * 1600
 
     async def failing_transcribe(_audio):
@@ -84,7 +84,7 @@ async def test_transcribe_pcm_propagates_stt_errors() -> None:
     mock_provider.name = "groq"
 
     with patch(
-        "navi.core.transcribe.resolve_provider",
+        "sybl.core.transcribe.resolve_provider",
         return_value=("groq", mock_provider),
     ):
         with pytest.raises(STTProviderError, match="boom"):
@@ -93,7 +93,7 @@ async def test_transcribe_pcm_propagates_stt_errors() -> None:
 
 @pytest.mark.asyncio
 async def test_collect_stream_text_accumulates_final_segments() -> None:
-    from navi.core.transcribe import _collect_stream_text
+    from sybl.core.transcribe import _collect_stream_text
 
     async def results():
         yield TranscriptionResult(text="Hello.", is_final=True)
@@ -106,7 +106,7 @@ async def test_collect_stream_text_accumulates_final_segments() -> None:
 
 @pytest.mark.asyncio
 async def test_collect_stream_text_uses_trailing_interim_when_no_final() -> None:
-    from navi.core.transcribe import _collect_stream_text
+    from sybl.core.transcribe import _collect_stream_text
 
     async def results():
         yield TranscriptionResult(text="hel", is_final=False)
@@ -118,7 +118,7 @@ async def test_collect_stream_text_uses_trailing_interim_when_no_final() -> None
 
 @pytest.mark.asyncio
 async def test_collect_stream_text_prefers_committed_over_last_interim() -> None:
-    from navi.core.transcribe import _collect_stream_text
+    from sybl.core.transcribe import _collect_stream_text
 
     async def results():
         yield TranscriptionResult(text="first part", is_final=True)

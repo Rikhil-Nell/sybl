@@ -1,5 +1,5 @@
 [project]
-name = "navi"
+name = "sybl"
 version = "0.1.0"
 description = "Open-source BYOK voice dictation — speak anywhere, transcribe fast, type it in."
 readme = "README.md"
@@ -38,14 +38,14 @@ dependencies = [
 ]
 
 [project.scripts]
-navi = "navi.cli:app"
+sybl = "sybl.cli:app"
 
 [project.urls]
-Homepage = "https://github.com/Rikhil-Nell/navi"
-Documentation = "https://github.com/Rikhil-Nell/navi/tree/main/docs"
-Repository = "https://github.com/Rikhil-Nell/navi"
-Issues = "https://github.com/Rikhil-Nell/navi/issues"
-Changelog = "https://github.com/Rikhil-Nell/navi/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/Rikhil-Nell/sybl"
+Documentation = "https://github.com/Rikhil-Nell/sybl/tree/main/docs"
+Repository = "https://github.com/Rikhil-Nell/sybl"
+Issues = "https://github.com/Rikhil-Nell/sybl/issues"
+Changelog = "https://github.com/Rikhil-Nell/sybl/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
@@ -66,7 +66,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["navi"]
+packages = ["sybl"]
 
 [tool.ruff]
 target-version = "py312"

@@ -7,17 +7,17 @@ from unittest.mock import MagicMock, patch
 import pytest
 from groq import APIConnectionError, APIStatusError, AuthenticationError, RateLimitError
 
-from navi.config.models import GroqConfig, NaviConfig
-from navi.providers.errors import (
+from sybl.config.models import GroqConfig, SyblConfig
+from sybl.providers.errors import (
     STTAuthError,
     STTProviderError,
     STTRateLimitError,
     STTTimeoutError,
 )
-from navi.providers.groq import GroqProvider
-from navi.providers.pcm import pcm_to_wav_bytes
-from navi.providers.registry import get_provider, list_providers
-from navi.providers.types import TranscriptionResult
+from sybl.providers.groq import GroqProvider
+from sybl.providers.pcm import pcm_to_wav_bytes
+from sybl.providers.registry import get_provider, list_providers
+from sybl.providers.types import TranscriptionResult
 
 
 def test_transcription_result_defaults() -> None:
@@ -39,13 +39,13 @@ def test_list_providers_includes_groq_and_deepgram() -> None:
 
 
 def test_get_provider_unknown_raises() -> None:
-    config = NaviConfig()
+    config = SyblConfig()
     with pytest.raises(STTProviderError, match="Unknown STT provider"):
         get_provider("unknown", config)
 
 
 def test_get_provider_returns_groq() -> None:
-    config = NaviConfig()
+    config = SyblConfig()
     provider = get_provider("groq", config)
     assert provider.name == "groq"
 
@@ -89,7 +89,7 @@ async def test_groq_streaming_buffers_chunks() -> None:
 @pytest.mark.asyncio
 async def test_groq_missing_api_key_raises_auth_error() -> None:
     provider = GroqProvider(GroqConfig(), api_key=None)
-    with patch("navi.providers.groq.get_provider_key", return_value=None):
+    with patch("sybl.providers.groq.get_provider_key", return_value=None):
         with pytest.raises(STTAuthError, match="API key not found"):
             await provider._transcribe_wav(b"RIFFfake")
 
@@ -107,7 +107,7 @@ async def test_groq_missing_api_key_raises_auth_error() -> None:
 )
 def test_groq_error_mapping(exc: Exception, expected: type[Exception]) -> None:
     provider = GroqProvider(GroqConfig(), api_key="test-key")
-    with patch("navi.providers.groq.Groq") as mock_groq:
+    with patch("sybl.providers.groq.Groq") as mock_groq:
         mock_groq.return_value.audio.transcriptions.create.side_effect = exc
         with pytest.raises(expected):
             provider._call_groq_once("test-key", b"RIFFfake")
@@ -118,7 +118,7 @@ def test_groq_5xx_maps_to_timeout() -> None:
     response = MagicMock()
     response.status_code = 503
     exc = APIStatusError("server error", response=response, body=None)
-    with patch("navi.providers.groq.Groq") as mock_groq:
+    with patch("sybl.providers.groq.Groq") as mock_groq:
         mock_groq.return_value.audio.transcriptions.create.side_effect = exc
         with pytest.raises(STTTimeoutError, match="server error"):
             provider._call_groq_once("test-key", b"RIFFfake")
@@ -129,7 +129,7 @@ def test_groq_4xx_maps_to_provider_error() -> None:
     response = MagicMock()
     response.status_code = 400
     exc = APIStatusError("bad request", response=response, body=None)
-    with patch("navi.providers.groq.Groq") as mock_groq:
+    with patch("sybl.providers.groq.Groq") as mock_groq:
         mock_groq.return_value.audio.transcriptions.create.side_effect = exc
         with pytest.raises(STTProviderError, match="Groq API error"):
             provider._call_groq_once("test-key", b"RIFFfake")

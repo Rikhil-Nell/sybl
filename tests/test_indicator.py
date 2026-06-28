@@ -4,9 +4,9 @@ from unittest.mock import patch
 
 import pytest
 
-from navi.config.models import IndicatorConfig, NaviConfig
-from navi.indicator import create_indicator
-from navi.indicator.noop import NoOpIndicator
+from sybl.config.models import IndicatorConfig, SyblConfig
+from sybl.indicator import create_indicator
+from sybl.indicator.noop import NoOpIndicator
 
 
 def test_noop_indicator_methods() -> None:
@@ -18,18 +18,18 @@ def test_noop_indicator_methods() -> None:
 
 
 def test_factory_disabled() -> None:
-    config = NaviConfig(indicator=IndicatorConfig(enabled=False))
+    config = SyblConfig(indicator=IndicatorConfig(enabled=False))
     assert isinstance(create_indicator(config), NoOpIndicator)
 
 
 def test_factory_strategy_none() -> None:
-    config = NaviConfig(indicator=IndicatorConfig(strategy="none"))
+    config = SyblConfig(indicator=IndicatorConfig(strategy="none"))
     assert isinstance(create_indicator(config), NoOpIndicator)
 
 
 def test_factory_overlay_on_non_windows() -> None:
-    config = NaviConfig()
-    with patch("navi.indicator.sys.platform", "linux"):
+    config = SyblConfig()
+    with patch("sybl.indicator.sys.platform", "linux"):
         assert isinstance(create_indicator(config), NoOpIndicator)
 
 
@@ -39,9 +39,9 @@ def test_factory_overlay_on_non_windows() -> None:
     reason="Windows tkinter path",
 )
 def test_factory_overlay_on_windows() -> None:
-    from navi.indicator.tk_win import TkCaptureIndicator
+    from sybl.indicator.tk_win import TkCaptureIndicator
 
-    config = NaviConfig()
+    config = SyblConfig()
     indicator = create_indicator(config)
     try:
         assert isinstance(indicator, TkCaptureIndicator)

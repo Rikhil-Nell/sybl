@@ -1,11 +1,11 @@
-"""Tests for capture indicator wiring in NaviDaemon."""
+"""Tests for capture indicator wiring in SyblDaemon."""
 
 from contextlib import ExitStack
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from navi.core.state import SessionState
+from sybl.core.state import SessionState
 
 
 def _enter_daemon_patches(stack: ExitStack, mock_indicator: MagicMock) -> None:
@@ -14,14 +14,14 @@ def _enter_daemon_patches(stack: ExitStack, mock_indicator: MagicMock) -> None:
     mock_controller = MagicMock()
     mock_controller.shutdown = AsyncMock()
     stack.enter_context(
-        patch("navi.core.daemon.create_indicator", return_value=mock_indicator)
+        patch("sybl.core.daemon.create_indicator", return_value=mock_indicator)
     )
-    stack.enter_context(patch("navi.core.daemon.setup_logging"))
+    stack.enter_context(patch("sybl.core.daemon.setup_logging"))
     stack.enter_context(
-        patch("navi.core.daemon.create_hotkey_manager", return_value=mock_hotkeys)
+        patch("sybl.core.daemon.create_hotkey_manager", return_value=mock_hotkeys)
     )
     stack.enter_context(
-        patch("navi.core.daemon.DictationController", return_value=mock_controller)
+        patch("sybl.core.daemon.DictationController", return_value=mock_controller)
     )
 
 
@@ -30,9 +30,9 @@ async def test_state_changed_shows_and_hides_indicator() -> None:
     mock_indicator = MagicMock()
     with ExitStack() as stack:
         _enter_daemon_patches(stack, mock_indicator)
-        from navi.core.daemon import NaviDaemon
+        from sybl.core.daemon import SyblDaemon
 
-        daemon = NaviDaemon()
+        daemon = SyblDaemon()
         await daemon._on_state_changed(SessionState.LISTENING)
         mock_indicator.show.assert_called_once()
         mock_indicator.hide.assert_not_called()
@@ -56,9 +56,9 @@ async def test_poll_levels_updates_indicator() -> None:
     with ExitStack() as stack:
         _enter_daemon_patches(stack, mock_indicator)
         stack.enter_context(patch("asyncio.sleep", side_effect=stop_after_one_sleep))
-        from navi.core.daemon import NaviDaemon
+        from sybl.core.daemon import SyblDaemon
 
-        daemon = NaviDaemon()
+        daemon = SyblDaemon()
         daemon._controller = mock_controller
         await daemon._poll_levels()
         mock_indicator.update_level.assert_called_once_with(0.42)

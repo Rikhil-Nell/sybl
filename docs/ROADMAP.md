@@ -1,4 +1,4 @@
-# Navi — Roadmap
+# sybl — Roadmap
 
 > Ordered plan of execution. Phases are sequential-ish; later phases assume the
 > earlier ones exist. There are **no time estimates** here on purpose — the order
@@ -30,16 +30,16 @@ Goal: turn the hello-world stub into a real, runnable project with config,
 logging, and the seams every later phase plugs into.
 
 - [x] Decide and pin tooling: `ruff` (lint/format), `pytest` (tests), typing.
-- [x] Define package layout, e.g. `navi/` with `cli`, `core`, `audio`,
+- [x] Define package layout, e.g. `sybl/` with `cli`, `core`, `audio`,
       `providers`, `inject`, `hotkeys`, `tui`, `config` modules.
-- [x] CLI entrypoint (replace `main.py`): `navi start`, `navi tui`,
-      `navi config`, `navi doctor`.
-- [x] Config system: a TOML config file (e.g. `~/.config/navi/config.toml`) +
+- [x] CLI entrypoint (replace `main.py`): `sybl start`, `sybl tui`,
+      `sybl config`, `sybl doctor`.
+- [x] Config system: a TOML config file (e.g. `~/.config/sybl/config.toml`) +
       sane defaults + **Pydantic** schema validation.
 - [x] Secure secret storage via OS keyring for provider API keys (BYOK).
 - [x] Structured logging that the TUI can later tail (log to file + in-memory
       ring buffer).
-- [x] `navi doctor`: environment/dependency/permission self-check.
+- [x] `sybl doctor`: environment/dependency/permission self-check.
 
 ## Phase 1 — Audio Capture Pipeline ★
 
@@ -80,7 +80,7 @@ batch turns out to be the easy/degenerate case.
       injecting, + cancelled/error) even before the daemon wraps it — the rest of
       the pipeline plugs into it.
 - [x] Provider registry; per-provider key from keyring
-      (`keyring.get_password("navi", "groq_api_key")`, etc.).
+      (`keyring.get_password("sybl", "groq_api_key")`, etc.).
 - [x] **First signal — Groq (Whisper), batch:** fastest path to "record
       → get text in the terminal", implemented behind the streaming interface.
       Model id configurable (`whisper-large-v3` vs `whisper-large-v3-turbo`;
@@ -109,7 +109,7 @@ matrix.
 
 ## Phase 4 — Global Hotkeys + Interaction Modes ★
 
-Goal: activate Navi from anywhere. **PTT is the reliability anchor;** toggle mode
+Goal: activate sybl from anywhere. **PTT is the reliability anchor;** toggle mode
 is secondary and harder to get right.
 
 > `pynput` is fine for an MVP on Windows; abstract it behind `HotkeyManager`
@@ -163,7 +163,7 @@ Phase 9 expands it.
 
 ## Phase 6 — Daemon + IPC
 
-Goal: make Navi a always-on background service the TUI can attach to.
+Goal: make sybl a always-on background service the TUI can attach to.
 
 - [x] Daemon process that owns hotkeys, audio, providers, and injection.
 - [x] State machine: `idle → listening → processing → injecting → idle`
@@ -181,7 +181,7 @@ Goal: make Navi a always-on background service the TUI can attach to.
 
 ## Phase 7 — TUI ★
 
-Goal: the only UI Navi has — terminal-native, for logs and reference.
+Goal: the only UI sybl has — terminal-native, for logs and reference.
 
 - [x] Textual app that connects to the daemon over IPC.
 - [x] Live log view (tails the daemon's ring buffer).
@@ -195,7 +195,7 @@ Goal: the only UI Navi has — terminal-native, for logs and reference.
 
 ## Phase 8 — The "Popup" Capture Indicator
 
-Goal: a small on-screen cue that Navi is listening near the cursor.
+Goal: a small on-screen cue that sybl is listening near the cursor.
 
 > Windows MVP shipped; macOS/Linux overlays deferred behind `CaptureIndicator`.
 
@@ -213,7 +213,7 @@ seam** rather than starting fresh.
 - [x] Deepen rule-based cleanup beyond the minimal pass (quote/dash normalize,
       punct spacing, optional repeated-word collapse).
 - [x] Custom vocabulary **STT hints** (names, jargon) — Deepgram keyterms + Groq
-      prompt; `navi config vocab` CLI. *(Post-STT replacement dictionary deferred;
+      prompt; `sybl config vocab` CLI. *(Post-STT replacement dictionary deferred;
       future LLM pass reuses the same term list.)*
 - [ ] Optional LLM "format pass" (also BYOK) for tone/cleanup — deferred.
 - [x] Voice commands on the final transcript (`new line`, `period`, `comma`).
@@ -243,7 +243,7 @@ skeleton    audio       1 signal     hotkeys    injection   min. cleanup
                         interface)
 ```
 
-Proven on **Windows first**. After this line, Navi already does the core job from
+Proven on **Windows first**. After this line, sybl already does the core job from
 the keyboard with usable output. Phases 3, 6, 7, 8+ make it robust, always-on,
 observable, multi-provider, and pleasant.
 

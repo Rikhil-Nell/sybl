@@ -6,8 +6,8 @@ import os
 
 import pytest
 
-from navi.ipc.protocol import DaemonInfo
-from navi.ipc.single_instance import DaemonAlreadyRunningError, DaemonLock
+from sybl.ipc.protocol import DaemonInfo
+from sybl.ipc.single_instance import DaemonAlreadyRunningError, DaemonLock
 
 
 def test_acquire_and_release(tmp_path) -> None:

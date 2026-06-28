@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Maintain AGENTS.md
 
-`AGENTS.md` at the repo root is the living source of truth for the Navi project
+`AGENTS.md` at the repo root is the living source of truth for the sybl project
 (mission, product spec, current state, architecture decisions, structure,
 conventions).
 

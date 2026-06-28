@@ -1,6 +1,6 @@
 # STT providers (BYOK)
 
-Navi does not host transcription. You bring your own API key; audio is sent directly
+sybl does not host transcription. You bring your own API key; audio is sent directly
 from your machine to the provider you configure.
 
 ## Supported providers
@@ -17,8 +17,8 @@ More providers (AssemblyAI, Gladia, etc.) are planned — see [ROADMAP.md](ROADM
 Keys are stored in the OS keyring via the CLI:
 
 ```powershell
-navi config set-key groq
-navi config set-key deepgram
+sybl config set-key groq
+sybl config set-key deepgram
 ```
 
 Never put API keys in `config.toml` or commit them to git.
@@ -51,8 +51,8 @@ temperature = 0.0
 One-shot test without the daemon:
 
 ```powershell
-navi config set-key groq
-navi transcribe --seconds 5
+sybl config set-key groq
+sybl transcribe --seconds 5
 ```
 
 ### Vocabulary hints
@@ -76,8 +76,8 @@ language = null
 Streaming test:
 
 ```powershell
-navi config set-key deepgram
-navi transcribe --seconds 5 --stream
+sybl config set-key deepgram
+sybl transcribe --seconds 5 --stream
 ```
 
 ### Vocabulary hints
@@ -101,8 +101,8 @@ interim segments.
 ## Costs and privacy
 
 - You pay your provider directly per their pricing.
-- Navi sends audio only during active transcription sessions.
-- No Navi telemetry or cloud storage of transcripts (history is local in the daemon).
+- sybl sends audio only during active transcription sessions.
+- No sybl telemetry or cloud storage of transcripts (history is local in the daemon).
 
 ## Adding a provider (contributors)
 

@@ -11,20 +11,20 @@ import pytest
 import soundfile as sf
 from typer.testing import CliRunner
 
-from navi.audio.debug import debug_recording_dir, default_recording_path, save_wav
-from navi.audio.devices import _dedupe_devices, resolve_device
-from navi.audio.errors import DeviceNotFoundError, SessionError
-from navi.audio.metering import (
+from sybl.audio.debug import debug_recording_dir, default_recording_path, save_wav
+from sybl.audio.devices import _dedupe_devices, resolve_device
+from sybl.audio.errors import DeviceNotFoundError, SessionError
+from sybl.audio.metering import (
     apply_meter_ballistics,
     compute_rms,
     display_level_from_dbfs,
     pcm_peak_dbfs,
 )
-from navi.audio.resample import resample_pcm
-from navi.audio.session import AudioCaptureSession
-from navi.audio.types import TARGET_SAMPLE_RATE, DeviceInfo
-from navi.cli import app
-from navi.config.models import AudioConfig
+from sybl.audio.resample import resample_pcm
+from sybl.audio.session import AudioCaptureSession
+from sybl.audio.types import TARGET_SAMPLE_RATE, DeviceInfo
+from sybl.cli import app
+from sybl.config.models import AudioConfig
 
 runner = CliRunner()
 
@@ -62,34 +62,34 @@ def _sine_pcm(
     return samples.tobytes()
 
 
-@patch("navi.audio.devices.list_input_devices", return_value=FAKE_DEVICES)
-@patch("navi.audio.devices.sd.default.device", (0, 1))
+@patch("sybl.audio.devices.list_input_devices", return_value=FAKE_DEVICES)
+@patch("sybl.audio.devices.sd.default.device", (0, 1))
 def test_resolve_device_default(_mock_list: MagicMock) -> None:
     assert resolve_device(None) == 0
 
 
-@patch("navi.audio.devices.list_input_devices", return_value=FAKE_DEVICES)
+@patch("sybl.audio.devices.list_input_devices", return_value=FAKE_DEVICES)
 def test_resolve_device_by_index(_mock_list: MagicMock) -> None:
     assert resolve_device("3") == 3
 
 
-@patch("navi.audio.devices.list_input_devices", return_value=FAKE_DEVICES)
+@patch("sybl.audio.devices.list_input_devices", return_value=FAKE_DEVICES)
 def test_resolve_device_by_name_substring(_mock_list: MagicMock) -> None:
     assert resolve_device("usb") == 3
 
 
-@patch("navi.audio.devices.list_input_devices", return_value=FAKE_DEVICES)
+@patch("sybl.audio.devices.list_input_devices", return_value=FAKE_DEVICES)
 def test_resolve_device_by_exact_name(_mock_list: MagicMock) -> None:
     assert resolve_device("Built-in Microphone") == 0
 
 
-@patch("navi.audio.devices.list_input_devices", return_value=FAKE_DEVICES)
+@patch("sybl.audio.devices.list_input_devices", return_value=FAKE_DEVICES)
 def test_resolve_device_not_found(_mock_list: MagicMock) -> None:
     with pytest.raises(DeviceNotFoundError, match="No input device"):
         resolve_device("nonexistent")
 
 
-@patch("navi.audio.devices.list_input_devices", return_value=FAKE_DEVICES)
+@patch("sybl.audio.devices.list_input_devices", return_value=FAKE_DEVICES)
 def test_resolve_device_invalid_index(_mock_list: MagicMock) -> None:
     with pytest.raises(DeviceNotFoundError, match="Device index 99"):
         resolve_device("99")
@@ -148,7 +148,7 @@ def test_meter_ballistics_attack_and_release() -> None:
     assert 0.0 < current < 0.5
 
 
-@patch("navi.audio.devices.sd.query_devices")
+@patch("sybl.audio.devices.sd.query_devices")
 def test_dedupe_devices_prefers_default(mock_query_devices: MagicMock) -> None:
     mock_query_devices.side_effect = lambda index: {"hostapi": 0}
     devices = [
@@ -163,16 +163,16 @@ def test_dedupe_devices_prefers_default(mock_query_devices: MagicMock) -> None:
 def test_default_recording_path_uses_debug_folder(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import navi.audio.debug as debug_module
+    import sybl.audio.debug as debug_module
 
-    monkeypatch.setattr(debug_module, "state_dir", lambda: Path("/tmp/navi-state"))
+    monkeypatch.setattr(debug_module, "state_dir", lambda: Path("/tmp/sybl-state"))
     path = default_recording_path()
     assert path.parent.name == "debug recording"
     assert path.name == "last_recording.wav"
 
 
 def test_debug_recording_dir(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    import navi.audio.debug as debug_module
+    import sybl.audio.debug as debug_module
 
     monkeypatch.setattr(debug_module, "state_dir", lambda: tmp_path)
     folder = debug_recording_dir()
@@ -216,13 +216,13 @@ async def test_session_start_stop() -> None:
     config = AudioConfig(block_duration_ms=20)
 
     with (
-        patch("navi.audio.session.resolve_device", return_value=0),
-        patch("navi.audio.session.get_device_name", return_value="Test Mic"),
+        patch("sybl.audio.session.resolve_device", return_value=0),
+        patch("sybl.audio.session.get_device_name", return_value="Test Mic"),
         patch(
-            "navi.audio.session.sd.query_devices",
+            "sybl.audio.session.sd.query_devices",
             return_value={"default_samplerate": 16000, "name": "Test Mic"},
         ),
-        patch("navi.audio.session.sd.InputStream", FakeInputStream),
+        patch("sybl.audio.session.sd.InputStream", FakeInputStream),
     ):
         session = AudioCaptureSession(config)
         await session.start()
@@ -238,13 +238,13 @@ async def test_session_start_stop() -> None:
 async def test_session_cancel_discards() -> None:
     config = AudioConfig()
     with (
-        patch("navi.audio.session.resolve_device", return_value=0),
-        patch("navi.audio.session.get_device_name", return_value="Test Mic"),
+        patch("sybl.audio.session.resolve_device", return_value=0),
+        patch("sybl.audio.session.get_device_name", return_value="Test Mic"),
         patch(
-            "navi.audio.session.sd.query_devices",
+            "sybl.audio.session.sd.query_devices",
             return_value={"default_samplerate": 16000, "name": "Test Mic"},
         ),
-        patch("navi.audio.session.sd.InputStream", FakeInputStream),
+        patch("sybl.audio.session.sd.InputStream", FakeInputStream),
     ):
         session = AudioCaptureSession(config)
         await session.start()
@@ -256,13 +256,13 @@ async def test_session_cancel_discards() -> None:
 async def test_session_double_start_raises() -> None:
     config = AudioConfig()
     with (
-        patch("navi.audio.session.resolve_device", return_value=0),
-        patch("navi.audio.session.get_device_name", return_value="Test Mic"),
+        patch("sybl.audio.session.resolve_device", return_value=0),
+        patch("sybl.audio.session.get_device_name", return_value="Test Mic"),
         patch(
-            "navi.audio.session.sd.query_devices",
+            "sybl.audio.session.sd.query_devices",
             return_value={"default_samplerate": 16000, "name": "Test Mic"},
         ),
-        patch("navi.audio.session.sd.InputStream", FakeInputStream),
+        patch("sybl.audio.session.sd.InputStream", FakeInputStream),
     ):
         session = AudioCaptureSession(config)
         await session.start()
@@ -276,13 +276,13 @@ async def test_session_pump_processes_callback_data() -> None:
     FakeInputStream.instances.clear()
     config = AudioConfig(block_duration_ms=20)
     with (
-        patch("navi.audio.session.resolve_device", return_value=0),
-        patch("navi.audio.session.get_device_name", return_value="Test Mic"),
+        patch("sybl.audio.session.resolve_device", return_value=0),
+        patch("sybl.audio.session.get_device_name", return_value="Test Mic"),
         patch(
-            "navi.audio.session.sd.query_devices",
+            "sybl.audio.session.sd.query_devices",
             return_value={"default_samplerate": 16000, "name": "Test Mic"},
         ),
-        patch("navi.audio.session.sd.InputStream", FakeInputStream),
+        patch("sybl.audio.session.sd.InputStream", FakeInputStream),
     ):
         session = AudioCaptureSession(config)
         await session.start()

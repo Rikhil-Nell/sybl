@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from navi.config.vocabulary import (
+from sybl.config.vocabulary import (
     VocabularyError,
     VocabularyStore,
     build_groq_vocabulary_prompt,
@@ -17,13 +17,13 @@ def test_add_list_remove_terms(tmp_path: Path) -> None:
     assert store.load_terms() == []
 
     store.add_term("Rikhil")
-    store.add_term("Navi")
-    assert store.load_terms() == ["Rikhil", "Navi"]
+    store.add_term("sybl")
+    assert store.load_terms() == ["Rikhil", "sybl"]
 
     store.add_term("rikhil")
-    assert store.load_terms() == ["Rikhil", "Navi"]
+    assert store.load_terms() == ["Rikhil", "sybl"]
 
-    store.remove_term("Navi")
+    store.remove_term("sybl")
     assert store.load_terms() == ["Rikhil"]
 
 
@@ -34,6 +34,6 @@ def test_add_empty_term_raises(tmp_path: Path) -> None:
 
 
 def test_build_groq_vocabulary_prompt() -> None:
-    prompt = build_groq_vocabulary_prompt(["Rikhil", "Navi"])
+    prompt = build_groq_vocabulary_prompt(["Rikhil", "sybl"])
     assert "Rikhil" in prompt
-    assert "Navi" in prompt
+    assert "sybl" in prompt

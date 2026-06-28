@@ -1,31 +1,31 @@
 # AGENTS.md
 
-> Living source of truth for the Navi project. Read this first. Keep it current.
-> Last updated: 2026-06-26 (Phase 10 complete — v0.1.0 OSS release)
+> Living source of truth for the sybl project. Read this first. Keep it current.
+> Last updated: 2026-06-28 (rebrand to sybl — package, CLI, PyPI, and paths)
 
 ---
 
 ## 1. Mission
 
-**Navi is an open-source, bring-your-own-key (BYOK) voice dictation tool.**
+**sybl is an open-source, bring-your-own-key (BYOK) voice dictation tool.**
 
 Put your cursor anywhere, hit a global shortcut, speak/ramble into a lightweight
-popup, and Navi transcribes it fast and types it in for you — wherever you were
+popup, and sybl transcribes it fast and types it in for you — wherever you were
 about to type. It is the open-source answer to closed tools like Wispr Flow.
 
 The guiding principles:
 
 - **BYOK, provider-agnostic.** Users plug in whatever speech-to-text (STT)
   credits they already have — Deepgram, AssemblyAI, Gladia, Groq (Whisper
-  large-v3), etc. No vendor lock-in, no Navi-hosted backend, no subscription.
+  large-v3), etc. No vendor lock-in, no sybl-hosted backend, no subscription.
 - **Local-first & private.** Audio goes straight from the user's machine to the
-  STT provider of their choice. Navi keeps no telemetry and stores nothing it
+  STT provider of their choice. sybl keeps no telemetry and stores nothing it
   doesn't have to.
 - **Fast & invisible.** Dictation should feel instant and stay out of the way.
-- **TUI, daemon-based.** Navi runs as a background daemon. All of its UI is a
+- **TUI, daemon-based.** sybl runs as a background daemon. All of its UI is a
   terminal UI (TUI): live logs, status, history, and config — nothing more.
 
-## 2. What Navi Does (Product Spec)
+## 2. What sybl Does (Product Spec)
 
 - **Global activation.** A system-wide shortcut works regardless of focused app.
 - **Two interaction modes:**
@@ -33,7 +33,7 @@ The guiding principles:
   - **Toggle / constant recording:** a double-press of the shortcut starts
     continuous recording; press again to stop.
 - **Popup capture surface.** When activated, a small on-screen pill appears near the
-  cursor so the user knows Navi is listening (Windows tkinter overlay MVP; see
+  cursor so the user knows sybl is listening (Windows tkinter overlay MVP; see
   `docs/POPUP-SPIKE.md`).
 - **BYOK transcription.** Audio is streamed/sent to the user's selected provider
   and transcribed quickly.
@@ -48,22 +48,22 @@ The guiding principles:
 
 - **Phase:** Phase 10 complete — v0.1.0 public release on GitHub and PyPI; contributor
   docs, CI (Windows + Ubuntu), issue/PR templates, and user docs hub shipped.
-- **Code:** `navi/audio/` implements `AudioCaptureSession` (sounddevice callback →
+- **Code:** `sybl/audio/` implements `AudioCaptureSession` (sounddevice callback →
   asyncio queue, 16 kHz mono int16, resampling, dBFS peak metering, debug WAV save).
-  `navi/providers/` implements streaming-first STT interface, `ProviderCapabilities`,
+  `sybl/providers/` implements streaming-first STT interface, `ProviderCapabilities`,
   `resolve_provider` session-start selection, `GroqProvider` (batch), and
   `DeepgramProvider` (WebSocket streaming + REST batch via official SDK).
-  `navi/hotkeys/` implements `HotkeyManager`, binding parser, Windows `pynput` PTT
-  backend, and focus capture at activation. `navi/inject/` implements `TextInjector`,
+  `sybl/hotkeys/` implements `HotkeyManager`, binding parser, Windows `pynput` PTT
+  backend, and focus capture at activation. `sybl/inject/` implements `TextInjector`,
   Windows clipboard-paste injection with focus restore and clipboard restoration.
-  `navi/core/` has `StateMachine`, `DictationController`, `NaviDaemon`, post-processing,
+  `sybl/core/` has `StateMachine`, `DictationController`, `SyblDaemon`, post-processing,
   voice commands, `TranscriptHistory`, `EventBus`, and transcribe pipeline.
-  `navi/config/vocabulary.py` stores STT hint terms. `navi/ipc/` implements
-  NDJSON command/event TCP servers and client. `navi/tui/` is a Textual app (logs,
-  status, history, settings, BYOK onboarding). `navi/indicator/` implements
+  `sybl/config/vocabulary.py` stores STT hint terms. `sybl/ipc/` implements
+  NDJSON command/event TCP servers and client. `sybl/tui/` is a Textual app (logs,
+  status, history, settings, BYOK onboarding). `sybl/indicator/` implements
   `CaptureIndicator` (NoOp + Windows tkinter overlay near cursor with RMS level bar).
-  CLI: `navi start`, `navi stop`, `navi status`, `navi tui`, `navi config`,
-  `navi config vocab`, `navi doctor`, `navi audio`, `navi transcribe`, `navi hotkey test`.
+  CLI: `sybl start`, `sybl stop`, `sybl status`, `sybl tui`, `sybl config`,
+  `sybl config vocab`, `sybl doctor`, `sybl audio`, `sybl transcribe`, `sybl hotkey test`.
 - **Stack pinned:** `typer`, `pydantic`, `platformdirs`, `keyring`, `tomli-w`,
   `sounddevice`, `numpy`, `soundfile`, `soxr`, `groq`, `tenacity`, `deepgram-sdk`,
   `pynput`, `textual`; dev: `ruff`, `pytest`, `pytest-asyncio`.
@@ -81,7 +81,7 @@ The guiding principles:
 |------|----------|-----------|
 | Language | Python 3.12 | Already scaffolded; first-class STT SDKs; great TUI ecosystem. |
 | Packaging / env | `uv` + `pyproject.toml` | Already in place; fast, reproducible. |
-| TUI framework | Textual (pinned) | Modern, async, rich rendering for logs/history; `navi tui` attaches over IPC. |
+| TUI framework | Textual (pinned) | Modern, async, rich rendering for logs/history; `sybl tui` attaches over IPC. |
 | Audio capture | `sounddevice` + **callback → queue** pattern | PortAudio bindings, NumPy-friendly; callback pushes int16 PCM to an `asyncio.Queue`; never block or process in the callback. |
 | Audio format | **16 kHz, mono, int16 PCM** | What most STT providers expect; resample in-pipeline if the device opens at 48 kHz. |
 | Daemon concurrency | **`asyncio` event loop** + dedicated audio thread | Daemon/TUI/async providers run on asyncio; sounddevice callback thread only enqueues chunks. |
@@ -101,9 +101,9 @@ The guiding principles:
 | Hotkey escape hatch | If `pynput` reliability becomes a recurring problem, introduce a small **native component** (Rust `global-hotkey` or similar) rather than fighting Python libs | Commercial tools use native code per OS; pure Python won't match Wispr Flow on hotkeys/injection long-term. |
 | Signal metering | **RMS level** for UI now; proper **VAD later** | RMS feeds the popup/TUI meter; `webrtcvad` or `silero-vad` when we need to avoid cutting off speech or trailing silence. |
 | Core concerns | State machine + post-processing pipeline are **first-class from early on** | They sit at the center of UX and the core text path; easier to refine while surrounding plumbing is still simple. |
-| Secrets | OS keyring via `navi.secrets` | Keep API keys out of plaintext config; `navi config set-key`. |
+| Secrets | OS keyring via `sybl.secrets` | Keep API keys out of plaintext config; `sybl config set-key`. |
 | CLI | Typer subcommands | `start`, `stop`, `status`, `tui`, `config`, `doctor`, `audio`, `transcribe`, `hotkey`. |
-| Logging | File + console + ring buffer | `navi.logging.setup_logging`; ring buffer for future TUI tail. |
+| Logging | File + console + ring buffer | `sybl.logging.setup_logging`; ring buffer for future TUI tail. |
 | Phase 4 hotkeys | **PTT-first** via `pynput` behind `HotkeyManager`; focus captured at **activation press** | Reliability anchor before toggle mode; HWND stored for Phase 5 injection; Windows-only MVP. |
 | Phase 5 injection | **Clipboard set + simulated Ctrl+V** via `SendInput` (ctypes); restore prior clipboard; focus restore with thread attach | Primary strategy on Windows; avoids pynput paste deadlock with hotkey listener; no new deps. |
 | Phase 5.5 post-processing | **Rule-based pipeline** (`PostProcessConfig` + ordered passes) between STT and inject | Whitespace, filler trim, capitalize on by default; auto-punctuation off; Phase 9 expands without restructuring. |
@@ -114,6 +114,7 @@ The guiding principles:
 | Phase 9 voice commands | **Final-transcript parsing** — `new line`, `period`, `comma` | No streaming/wake-word; Esc cancels before STT/inject; no scratch-that erase. |
 | Phase 10 OSS | **MIT license**, PyPI + `pipx`/`uv tool` primary install, GitHub issue/PR templates, CI on Windows+Ubuntu | Hermes-style contributor surface without a separate docs site; `docs/` hub + README landing page. |
 | Phase 10 PyPI | **`release.yml`** on GitHub Release → `uv build` → PyPI trusted publishing (OIDC) | No long-lived PyPI token in repo; maintainers configure pending publisher on PyPI. |
+| Rebrand | **sybl** everywhere — Python package `sybl/`, CLI **`sybl`**, PyPI **`sybl`**, app id `sybl` | Prior names `navi` and `sybil`/`sybil-dictation` were taken or conflicted on PyPI; `sybl` is the canonical name. |
 
 High-level component map:
 
@@ -148,7 +149,7 @@ High-level component map:
 > Keep this in sync with the real tree as it grows.
 
 ```
-Navi/
+sybl/
 ├── AGENTS.md
 ├── README.md
 ├── LICENSE
@@ -200,7 +201,7 @@ Navi/
 │   ├── test_vocabulary.py
 │   ├── test_voice_commands.py
 │   └── test_provider_vocabulary.py
-└── navi/
+└── sybl/
     ├── __init__.py
     ├── __main__.py
     ├── cli/               # start, stop, status, tui, config, doctor, audio, transcribe, hotkey

@@ -4,7 +4,7 @@
 
 ## Test plan
 
-- [ ] `uv run ruff check navi tests`
+- [ ] `uv run ruff check sybl tests`
 - [ ] `uv run pytest -m "not integration" -q`
 - [ ] Updated [AGENTS.md](AGENTS.md) if behavior or architecture changed
 - [ ] No secrets or API keys in the diff

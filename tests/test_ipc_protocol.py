@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from navi.ipc.protocol import (
+from sybl.ipc.protocol import (
     CommandName,
     CommandResponse,
     decode_line,

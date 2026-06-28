@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from navi.core.history import TranscriptHistory
+from sybl.core.history import TranscriptHistory
 
 
 def test_history_capacity() -> None:

@@ -1,13 +1,13 @@
 """Tests for vocabulary propagation to STT providers."""
 
-from navi.config.models import DeepgramConfig, GroqConfig
-from navi.providers.deepgram import DeepgramProvider
-from navi.providers.groq import GroqProvider
+from sybl.config.models import DeepgramConfig, GroqConfig
+from sybl.providers.deepgram import DeepgramProvider
+from sybl.providers.groq import GroqProvider
 
 
 def test_groq_builds_prompt_from_vocabulary_when_unset() -> None:
-    provider = GroqProvider(GroqConfig(), vocabulary=["Rikhil", "Navi"])
-    assert provider._effective_prompt() == "Common terms: Rikhil, Navi"
+    provider = GroqProvider(GroqConfig(), vocabulary=["Rikhil", "sybl"])
+    assert provider._effective_prompt() == "Common terms: Rikhil, sybl"
 
 
 def test_groq_manual_prompt_overrides_vocabulary() -> None:
@@ -21,7 +21,7 @@ def test_groq_manual_prompt_overrides_vocabulary() -> None:
 def test_deepgram_connect_kwargs_include_keyterms() -> None:
     provider = DeepgramProvider(
         DeepgramConfig(),
-        vocabulary=["Rikhil", "Navi"],
+        vocabulary=["Rikhil", "sybl"],
     )
     kwargs = provider._connect_kwargs()
-    assert kwargs["keyterm"] == ["Rikhil", "Navi"]
+    assert kwargs["keyterm"] == ["Rikhil", "sybl"]

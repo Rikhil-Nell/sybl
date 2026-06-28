@@ -1,10 +1,10 @@
 # Configuration reference
 
-Navi reads `config.toml` from your platform config directory (via `platformdirs`).
-Run `navi config init` to create defaults.
+sybl reads `config.toml` from your platform config directory (via `platformdirs`).
+Run `sybl config init` to create defaults.
 
 State files (vocabulary, daemon socket info, logs, debug recordings) live in a
-separate state directory under the same app name (`navi`).
+separate state directory under the same app name (`sybl`).
 
 ## `[provider]`
 
@@ -78,9 +78,9 @@ Rule-based cleanup between STT and injection:
 Manage terms via CLI (stored in `vocabulary.toml`):
 
 ```powershell
-navi config vocab add Navi
-navi config vocab list
-navi config vocab remove Navi
+sybl config vocab add sybl
+sybl config vocab list
+sybl config vocab remove sybl
 ```
 
 ## `[voice_commands]`
@@ -138,10 +138,10 @@ On non-Windows platforms the overlay degrades to a no-op.
 ## CLI config commands
 
 ```powershell
-navi config init
-navi config show
-navi config set-key <provider>
-navi config vocab add|list|remove <term>
+sybl config init
+sybl config show
+sybl config set-key <provider>
+sybl config vocab add|list|remove <term>
 ```
 
 Changes made through the TUI are routed through the daemon so config stays authoritative.
