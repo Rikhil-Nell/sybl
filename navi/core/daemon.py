@@ -19,6 +19,7 @@ from navi.core.history import TranscriptHistory
 from navi.core.state import SessionState
 from navi.core.transcribe import TranscribeOutcome
 from navi.hotkeys import create_hotkey_manager
+from navi.indicator import create_indicator
 from navi.ipc.protocol import CommandName, DaemonInfo
 from navi.ipc.server import IpcServer
 from navi.ipc.single_instance import DaemonLock
@@ -60,6 +61,7 @@ class NaviDaemon:
             on_transcript=self._on_transcript,
         )
         self._hotkeys = create_hotkey_manager(self._config.hotkey)
+        self._indicator = create_indicator(self._config)
         self._wire_log_handler()
 
     @property
@@ -98,10 +100,13 @@ class NaviDaemon:
     async def _on_state_changed(self, state: SessionState) -> None:
         await self._events.emit_state_changed(state)
         if state is SessionState.LISTENING:
+            self._indicator.show()
             if self._level_task is None or self._level_task.done():
                 self._level_task = asyncio.create_task(self._poll_levels())
-        elif self._level_task is not None and not self._level_task.done():
-            self._level_task.cancel()
+        else:
+            self._indicator.hide()
+            if self._level_task is not None and not self._level_task.done():
+                self._level_task.cancel()
 
     async def _on_transcript(
         self,
@@ -125,6 +130,7 @@ class NaviDaemon:
         try:
             while self._controller.state is SessionState.LISTENING:
                 level = self._controller.current_level
+                self._indicator.update_level(level)
                 await self._events.emit_level(level)
                 await asyncio.sleep(0.05)
         except asyncio.CancelledError:
@@ -204,9 +210,13 @@ class NaviDaemon:
         _deep_merge(merged, patch)
         new_config = NaviConfig.model_validate(merged)
         hotkey_changed = new_config.hotkey != self._config.hotkey
+        indicator_changed = new_config.indicator != self._config.indicator
         self._config = new_config
         self._config_manager.save(new_config)
         self._controller.update_config(new_config)
+        if indicator_changed:
+            self._indicator.shutdown()
+            self._indicator = create_indicator(new_config)
         if hotkey_changed:
             await self._hotkeys.stop()
             self._hotkeys = create_hotkey_manager(new_config.hotkey)
@@ -260,6 +270,8 @@ class NaviDaemon:
             self._level_task.cancel()
         await self._controller.shutdown()
         await self._hotkeys.stop()
+        self._indicator.hide()
+        self._indicator.shutdown()
         if self._ipc is not None:
             await self._ipc.stop()
             self._ipc = None

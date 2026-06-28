@@ -176,8 +176,8 @@ Goal: make Navi a always-on background service the TUI can attach to.
       immediately — TUI and daemon never drift out of sync.
 - [x] Start/stop/status management; single-instance guard; graceful shutdown
       (users start/stop the daemon constantly during dev).
-- [ ] Auto-start integration docs (systemd user service / launchd / Windows
-      startup) — optional opt-in.
+- [x] Auto-start integration docs (systemd user service / launchd / Windows
+      startup) — optional opt-in; see [`docs/DAEMON.md`](DAEMON.md).
 
 ## Phase 7 — TUI ★
 
@@ -197,17 +197,13 @@ Goal: the only UI Navi has — terminal-native, for logs and reference.
 
 Goal: a small on-screen cue that Navi is listening near the cursor.
 
-> This is the most platform-dependent piece and is intentionally late: the
-> product is fully usable without it. Research/spike before committing.
+> Windows MVP shipped; macOS/Linux overlays deferred behind `CaptureIndicator`.
 
-- [ ] Spike the options and pick per-platform approaches:
-  - Tiny always-on-top borderless window (e.g. a minimal native/Qt/GTK overlay).
-  - OS-native overlay APIs.
-  - Tray/menubar icon state change as a low-effort fallback.
-- [ ] Live mic level / waveform in the indicator.
-- [ ] Position near the text cursor / active window where feasible.
-- [ ] Graceful degradation: if no overlay is possible, fall back to a sound or
-      tray cue.
+- [x] Spike the options and pick per-platform approaches — see [`docs/POPUP-SPIKE.md`](POPUP-SPIKE.md).
+- [x] Live mic level in the indicator (RMS level bar; waveform polish deferred).
+- [x] Position near the text cursor on show (`GetCursorPos` + config offset).
+- [x] Graceful degradation: overlay creation failure logs once and falls back to
+      no-op; dictation unaffected. *(Sound/tray cue deferred.)*
 
 ## Phase 9 — Dictation Quality & Power Features
 
@@ -251,7 +247,7 @@ observable, multi-provider, and pleasant.
 ## Open questions to resolve along the way
 
 - Popup rendering: which mechanism per platform, and how to position it near the
-  cursor (Phase 8 spike).
+  cursor — **Windows tkinter MVP done**; macOS/Linux TBD.
 - Streaming vs batch as the **default** UX (latency vs accuracy vs cost) — the
   interface supports both; which is the default ships as a decision.
 - Wayland text injection limitations and the best fallback (post-Windows).

@@ -1,7 +1,7 @@
 # AGENTS.md
 
 > Living source of truth for the Navi project. Read this first. Keep it current.
-> Last updated: 2026-06-28 (Phase 7 complete)
+> Last updated: 2026-06-26 (Phase 8 complete)
 
 ---
 
@@ -32,9 +32,9 @@ The guiding principles:
   - **Push-to-talk (PTT):** hold the shortcut, speak, release to finish.
   - **Toggle / constant recording:** a double-press of the shortcut starts
     continuous recording; press again to stop.
-- **Popup capture surface.** When activated, a small indicator/popup appears so
-  the user knows Navi is listening. *(Exact rendering approach is an open
-  research item — see `docs/ROADMAP.md`.)*
+- **Popup capture surface.** When activated, a small on-screen pill appears near the
+  cursor so the user knows Navi is listening (Windows tkinter overlay MVP; see
+  `docs/POPUP-SPIKE.md`).
 - **BYOK transcription.** Audio is streamed/sent to the user's selected provider
   and transcribed quickly.
 - **Text injection.** The transcript is inserted at the current cursor location
@@ -46,7 +46,8 @@ The guiding principles:
 
 > Update this section every time the project's reality changes.
 
-- **Phase:** Phase 7 complete — daemon IPC + Textual TUI attach; Phase 8 (popup) is next.
+- **Phase:** Phase 8 complete — Windows tkinter listening pill wired to daemon
+  state/level; Phase 9 (dictation quality) is next.
 - **Code:** `navi/audio/` implements `AudioCaptureSession` (sounddevice callback →
   asyncio queue, 16 kHz mono int16, resampling, dBFS peak metering, debug WAV save).
   `navi/providers/` implements streaming-first STT interface, `ProviderCapabilities`,
@@ -57,8 +58,10 @@ The guiding principles:
   Windows clipboard-paste injection with focus restore and clipboard restoration.
   `navi/core/` has `StateMachine`, `DictationController`, `NaviDaemon`, post-processing,
   `TranscriptHistory`, `EventBus`, and transcribe pipeline. `navi/ipc/` implements
-  NDJSON command/event TCP servers and client. `navi/tui/` is a Textual app (logs,
-  status, history, settings, BYOK onboarding). CLI: `navi start`, `navi stop`,
+  NDJSON command/event TCP servers and client.   `navi/tui/` is a Textual app (logs,
+  status, history, settings, BYOK onboarding). `navi/indicator/` implements
+  `CaptureIndicator` (NoOp + Windows tkinter overlay near cursor with RMS level bar).
+  CLI: `navi start`, `navi stop`,
   `navi status`, `navi tui`, `navi config`, `navi doctor`, `navi audio`, `navi transcribe`,
   `navi hotkey test`.
 - **Stack pinned:** `typer`, `pydantic`, `platformdirs`, `keyring`, `tomli-w`,
@@ -66,7 +69,7 @@ The guiding principles:
   `pynput`, `textual`; dev: `ruff`, `pytest`, `pytest-asyncio`.
 - **Primary platform:** Windows first (dev machine). Code stays cross-platform
   behind interfaces, but the core loop is proven on Windows before expanding.
-- **Open questions:** popup rendering mechanism; per-platform text-injection
+- **Open questions:** per-platform overlay beyond Windows; text-injection
   edge cases (Wayland especially); how aggressive default post-processing should
   be.
 
@@ -106,6 +109,7 @@ The guiding principles:
 | Phase 5.5 post-processing | **Rule-based pipeline** (`PostProcessConfig` + ordered passes) between STT and inject | Whitespace, filler trim, capitalize on by default; auto-punctuation off; Phase 9 expands without restructuring. |
 | Phase 6 IPC | **TCP localhost NDJSON** — separate command + event ports; `daemon.json` + PID lock | Cross-platform; asyncio-native; TUI/CLI attach without shared memory. |
 | Phase 7 TUI | **Textual dashboard** — logs, status, history, settings, BYOK onboarding | All config/key writes routed through daemon IPC; keyboard-driven MVP. |
+| Phase 8 indicator | **Windows tkinter overlay** on dedicated thread; `CaptureIndicator` protocol + `NoOpIndicator` elsewhere | Stdlib, no new deps; cursor position via ctypes; show on LISTENING, RMS level bar; degrade to no-op if tk fails (`docs/POPUP-SPIKE.md`). |
 
 High-level component map:
 
@@ -127,11 +131,12 @@ High-level component map:
                   | (cursor target) |
                   +-----------------+
                            ▲
-                           │ IPC (logs / state / history)
-                  +--------+--------+
-                  |   TUI Client    |
-                  | (Textual app)   |
-                  +-----------------+
+         +-----------------+------------------+
+         │ IPC (logs/state/history)           │
++--------+--------+              +-----------+-----------+
+|   TUI Client    |              | Capture Indicator     |
+| (Textual app)   |              | (listening pill, Win) |
++-----------------+              +-----------------------+
 ```
 
 ## 5. Project Structure
@@ -143,6 +148,8 @@ Navi/
 ├── AGENTS.md
 ├── README.md
 ├── docs/
+│   ├── DAEMON.md
+│   ├── POPUP-SPIKE.md
 │   ├── ROADMAP.md
 │   └── RESEARCH-NOTES.md   # recovered planning + research-agent rationale
 ├── main.py                # legacy redirect to CLI
@@ -156,8 +163,10 @@ Navi/
 │   ├── test_deepgram.py
 │   ├── test_dictation.py
 │   ├── test_doctor.py
+│   ├── test_daemon_indicator.py
 │   ├── test_history.py
 │   ├── test_hotkeys.py
+│   ├── test_indicator.py
 │   ├── test_inject.py
 │   ├── test_ipc_protocol.py
 │   ├── test_ipc_server.py
@@ -182,6 +191,7 @@ Navi/
     ├── providers/         # STT interface, capabilities, manager, Groq, Deepgram
     ├── hotkeys/           # HotkeyManager, bindings, pynput backend, focus capture
     ├── inject/            # TextInjector, Windows clipboard-paste injection
+    ├── indicator/         # CaptureIndicator, NoOp, Windows tkinter overlay
     └── tui/               # Textual client (dashboard, settings, onboarding)
 ```
 

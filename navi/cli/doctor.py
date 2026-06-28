@@ -158,6 +158,7 @@ def run_checks() -> list[CheckResult]:
         results.extend(_check_hotkeys(config))
         results.extend(_check_inject(config))
         results.extend(_check_postprocess(config))
+        results.extend(_check_indicator(config))
 
     results.extend(_check_daemon())
     results.extend(_check_audio())
@@ -347,6 +348,50 @@ def _check_postprocess(config) -> list[CheckResult]:
             "Post-processing",
             CheckStatus.PASS,
             f"{flags}; sample -> {sample!r}",
+        )
+    ]
+
+
+def _check_indicator(config) -> list[CheckResult]:
+    indicator = config.indicator
+    if not indicator.enabled or indicator.strategy == "none":
+        return [
+            CheckResult(
+                "Capture indicator",
+                CheckStatus.WARN,
+                "disabled in config (no on-screen listening cue)",
+            )
+        ]
+
+    if sys.platform != "win32":
+        return [
+            CheckResult(
+                "Capture indicator",
+                CheckStatus.WARN,
+                f"overlay strategy not implemented on {sys.platform} yet",
+            )
+        ]
+
+    try:
+        import tkinter as tk
+
+        root = tk.Tk()
+        root.withdraw()
+        root.destroy()
+    except Exception as exc:
+        return [
+            CheckResult(
+                "Capture indicator",
+                CheckStatus.FAIL,
+                f"tkinter unavailable: {exc}",
+            )
+        ]
+
+    return [
+        CheckResult(
+            "Capture indicator",
+            CheckStatus.PASS,
+            f"overlay enabled ({indicator.size_px}px pill near cursor)",
         )
     ]
 

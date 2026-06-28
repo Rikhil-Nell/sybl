@@ -89,3 +89,40 @@ async def test_transcribe_pcm_propagates_stt_errors() -> None:
     ):
         with pytest.raises(STTProviderError, match="boom"):
             await transcribe_pcm(config, pcm)
+
+
+@pytest.mark.asyncio
+async def test_collect_stream_text_accumulates_final_segments() -> None:
+    from navi.core.transcribe import _collect_stream_text
+
+    async def results():
+        yield TranscriptionResult(text="Hello.", is_final=True)
+        yield TranscriptionResult(text="How are", is_final=False)
+        yield TranscriptionResult(text="How are you?", is_final=True)
+
+    text = await _collect_stream_text(results())
+    assert text == "Hello. How are you?"
+
+
+@pytest.mark.asyncio
+async def test_collect_stream_text_uses_trailing_interim_when_no_final() -> None:
+    from navi.core.transcribe import _collect_stream_text
+
+    async def results():
+        yield TranscriptionResult(text="hel", is_final=False)
+        yield TranscriptionResult(text="hello world", is_final=False)
+
+    text = await _collect_stream_text(results())
+    assert text == "hello world"
+
+
+@pytest.mark.asyncio
+async def test_collect_stream_text_prefers_committed_over_last_interim() -> None:
+    from navi.core.transcribe import _collect_stream_text
+
+    async def results():
+        yield TranscriptionResult(text="first part", is_final=True)
+        yield TranscriptionResult(text="second part", is_final=False)
+
+    text = await _collect_stream_text(results())
+    assert text == "first part second part"

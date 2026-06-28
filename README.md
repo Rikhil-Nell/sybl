@@ -111,6 +111,10 @@ The TUI shows live logs, dictation state, transcription history, and in-app sett
 (provider, API keys, post-processing). On first run with no keys configured, a BYOK
 onboarding wizard appears.
 
+While dictating, a **small listening pill** appears near your cursor (Windows
+overlay, enabled by default). It shows live mic level and hides when you release
+the hotkey. Disable with `indicator.enabled = false` in config.
+
 Optional: run the full test suite (excludes mic hardware and live API tests):
 
 ```powershell

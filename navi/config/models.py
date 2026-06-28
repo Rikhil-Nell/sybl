@@ -73,6 +73,14 @@ class UiConfig(BaseModel):
     onboarding_complete: bool = False
 
 
+class IndicatorConfig(BaseModel):
+    enabled: bool = True
+    strategy: Literal["overlay", "none"] = "overlay"
+    size_px: int = 48
+    offset_x: int = 16
+    offset_y: int = 16
+
+
 class NaviConfig(BaseModel):
     provider: ProviderConfig = Field(default_factory=ProviderConfig)
     hotkey: HotkeyConfig = Field(default_factory=HotkeyConfig)
@@ -82,3 +90,4 @@ class NaviConfig(BaseModel):
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     ipc: IpcConfig = Field(default_factory=IpcConfig)
     ui: UiConfig = Field(default_factory=UiConfig)
+    indicator: IndicatorConfig = Field(default_factory=IndicatorConfig)

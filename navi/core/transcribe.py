@@ -151,9 +151,9 @@ async def _collect_final_text(results) -> str:
     final_parts: list[str] = []
     async for result in results:
         assert isinstance(result, TranscriptionResult)
-        if result.is_final:
-            final_parts.append(result.text)
-    return "".join(final_parts).strip()
+        if result.is_final and result.text.strip():
+            final_parts.append(result.text.strip())
+    return _join_transcript_parts(final_parts)
 
 
 async def _collect_stream_text(
@@ -161,16 +161,29 @@ async def _collect_stream_text(
     *,
     on_partial: Callable[[str], None] | None = None,
 ) -> str:
-    latest_final = ""
-    latest_partial = ""
+    committed: list[str] = []
+    live = ""
     async for result in results:
         assert isinstance(result, TranscriptionResult)
         if result.is_final:
-            latest_final = result.text
+            text = result.text.strip()
+            if text:
+                committed.append(text)
+            live = ""
             if on_partial is not None:
-                on_partial(result.text)
+                on_partial(_join_transcript_parts(committed))
         else:
-            latest_partial = result.text
+            live = result.text
             if on_partial is not None:
-                on_partial(result.text)
-    return (latest_final or latest_partial).strip()
+                on_partial(
+                    _join_transcript_parts(
+                        committed + ([live.strip()] if live.strip() else [])
+                    )
+                )
+    if live.strip():
+        committed.append(live.strip())
+    return _join_transcript_parts(committed)
+
+
+def _join_transcript_parts(parts: list[str]) -> str:
+    return " ".join(parts).strip()
