@@ -60,7 +60,11 @@ def test_tui_requires_daemon() -> None:
 
 
 def test_transcribe_help() -> None:
-    result = runner.invoke(app, ["transcribe", "--help"])
+    result = runner.invoke(
+        app,
+        ["transcribe", "--help"],
+        env={"NO_COLOR": "1", "TERM": "dumb"},
+    )
     assert result.exit_code == 0
     assert "transcribe" in result.stdout.lower()
     assert "--seconds" in result.stdout

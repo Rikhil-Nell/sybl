@@ -148,7 +148,9 @@ def test_meter_ballistics_attack_and_release() -> None:
     assert 0.0 < current < 0.5
 
 
-def test_dedupe_devices_prefers_default() -> None:
+@patch("navi.audio.devices.sd.query_devices")
+def test_dedupe_devices_prefers_default(mock_query_devices: MagicMock) -> None:
+    mock_query_devices.side_effect = lambda index: {"hostapi": 0}
     devices = [
         DeviceInfo(0, "Mic", 48000.0, 2, is_default=False),
         DeviceInfo(5, "Mic", 48000.0, 2, is_default=True),
@@ -208,78 +210,97 @@ class FakeInputStream:
         self.active = False
 
 
-@patch("navi.audio.session.get_device_name", return_value="Test Mic")
-@patch("navi.audio.session.resolve_device", return_value=0)
-@patch("navi.audio.session.sd.InputStream", FakeInputStream)
 @pytest.mark.asyncio
-async def test_session_start_stop(_resolve: MagicMock, _name: MagicMock) -> None:
+async def test_session_start_stop() -> None:
     FakeInputStream.instances.clear()
     config = AudioConfig(block_duration_ms=20)
 
-    session = AudioCaptureSession(config)
-    await session.start()
-    assert session.is_recording
-    assert FakeInputStream.instances
-
-    pcm = await session.stop()
-    assert isinstance(pcm, bytes)
-    assert not session.is_recording
-
-
-@patch("navi.audio.session.get_device_name", return_value="Test Mic")
-@patch("navi.audio.session.resolve_device", return_value=0)
-@patch("navi.audio.session.sd.InputStream", FakeInputStream)
-@pytest.mark.asyncio
-async def test_session_cancel_discards(_resolve: MagicMock, _name: MagicMock) -> None:
-    config = AudioConfig()
-    session = AudioCaptureSession(config)
-    await session.start()
-    await session.cancel()
-    assert not session.is_recording
-
-
-@patch("navi.audio.session.get_device_name", return_value="Test Mic")
-@patch("navi.audio.session.resolve_device", return_value=0)
-@patch("navi.audio.session.sd.InputStream", FakeInputStream)
-@pytest.mark.asyncio
-async def test_session_double_start_raises(
-    _resolve: MagicMock, _name: MagicMock
-) -> None:
-    config = AudioConfig()
-    session = AudioCaptureSession(config)
-    await session.start()
-    with pytest.raises(SessionError, match="already recording"):
+    with (
+        patch("navi.audio.session.resolve_device", return_value=0),
+        patch("navi.audio.session.get_device_name", return_value="Test Mic"),
+        patch(
+            "navi.audio.session.sd.query_devices",
+            return_value={"default_samplerate": 16000, "name": "Test Mic"},
+        ),
+        patch("navi.audio.session.sd.InputStream", FakeInputStream),
+    ):
+        session = AudioCaptureSession(config)
         await session.start()
-    await session.cancel()
+        assert session.is_recording
+        assert FakeInputStream.instances
+
+        pcm = await session.stop()
+        assert isinstance(pcm, bytes)
+        assert not session.is_recording
 
 
-@patch("navi.audio.session.get_device_name", return_value="Test Mic")
-@patch("navi.audio.session.resolve_device", return_value=0)
-@patch("navi.audio.session.sd.InputStream", FakeInputStream)
 @pytest.mark.asyncio
-async def test_session_pump_processes_callback_data(
-    _resolve: MagicMock,
-    _name: MagicMock,
-) -> None:
+async def test_session_cancel_discards() -> None:
+    config = AudioConfig()
+    with (
+        patch("navi.audio.session.resolve_device", return_value=0),
+        patch("navi.audio.session.get_device_name", return_value="Test Mic"),
+        patch(
+            "navi.audio.session.sd.query_devices",
+            return_value={"default_samplerate": 16000, "name": "Test Mic"},
+        ),
+        patch("navi.audio.session.sd.InputStream", FakeInputStream),
+    ):
+        session = AudioCaptureSession(config)
+        await session.start()
+        await session.cancel()
+        assert not session.is_recording
+
+
+@pytest.mark.asyncio
+async def test_session_double_start_raises() -> None:
+    config = AudioConfig()
+    with (
+        patch("navi.audio.session.resolve_device", return_value=0),
+        patch("navi.audio.session.get_device_name", return_value="Test Mic"),
+        patch(
+            "navi.audio.session.sd.query_devices",
+            return_value={"default_samplerate": 16000, "name": "Test Mic"},
+        ),
+        patch("navi.audio.session.sd.InputStream", FakeInputStream),
+    ):
+        session = AudioCaptureSession(config)
+        await session.start()
+        with pytest.raises(SessionError, match="already recording"):
+            await session.start()
+        await session.cancel()
+
+
+@pytest.mark.asyncio
+async def test_session_pump_processes_callback_data() -> None:
     FakeInputStream.instances.clear()
     config = AudioConfig(block_duration_ms=20)
-    session = AudioCaptureSession(config)
-    await session.start()
+    with (
+        patch("navi.audio.session.resolve_device", return_value=0),
+        patch("navi.audio.session.get_device_name", return_value="Test Mic"),
+        patch(
+            "navi.audio.session.sd.query_devices",
+            return_value={"default_samplerate": 16000, "name": "Test Mic"},
+        ),
+        patch("navi.audio.session.sd.InputStream", FakeInputStream),
+    ):
+        session = AudioCaptureSession(config)
+        await session.start()
 
-    stream = FakeInputStream.instances[-1]
-    callback = stream.callback
-    assert callback is not None
+        stream = FakeInputStream.instances[-1]
+        callback = stream.callback
+        assert callback is not None
 
-    frame_count = int(TARGET_SAMPLE_RATE * 0.02)
-    indata = np.zeros((frame_count, 1), dtype=np.int16)
-    indata[:, 0] = 8000
-    callback(indata, frame_count, None, MagicMock())
+        frame_count = int(TARGET_SAMPLE_RATE * 0.02)
+        indata = np.zeros((frame_count, 1), dtype=np.int16)
+        indata[:, 0] = 8000
+        callback(indata, frame_count, None, MagicMock())
 
-    await asyncio.sleep(0.1)
-    assert session.current_level > 0.0
+        await asyncio.sleep(0.1)
+        assert session.current_level > 0.0
 
-    pcm = await session.stop()
-    assert len(pcm) > 0
+        pcm = await session.stop()
+        assert len(pcm) > 0
 
 
 def test_audio_devices_help() -> None:
@@ -288,7 +309,11 @@ def test_audio_devices_help() -> None:
 
 
 def test_audio_record_help() -> None:
-    result = runner.invoke(app, ["audio", "record", "--help"])
+    result = runner.invoke(
+        app,
+        ["audio", "record", "--help"],
+        env={"NO_COLOR": "1", "TERM": "dumb"},
+    )
     assert result.exit_code == 0
     assert "--seconds" in result.stdout
 
