@@ -110,8 +110,10 @@ Stored in `vocabulary.toml` under your Navi state directory. Disable with
 Parsed from the **final** transcript after post-processing (works in batch and streaming):
 
 - `new line` / `newline` — inserts a line break
-- `scratch that` / `undo that` — cancels injection for that utterance
 - `period` / `comma` — inserts `.` / `,`
+
+To cancel before anything is transcribed or pasted, press **Esc** while holding
+the hotkey. Transcripts always land in TUI history after STT completes.
 
 Disable with `voice_commands.enabled = false`.
 

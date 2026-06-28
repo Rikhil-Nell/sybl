@@ -225,10 +225,7 @@ class DictationController:
                 final_text,
             )
 
-        command_result = apply_voice_commands(self._config.voice_commands, final_text)
-        final_text = command_result.text
-        if command_result.skip_inject:
-            logger.info("Voice command cancelled injection for this utterance")
+        final_text = apply_voice_commands(self._config.voice_commands, final_text)
 
         if self._on_transcript is not None:
             result = self._on_transcript(outcome, outcome.text, final_text)
@@ -236,9 +233,7 @@ class DictationController:
                 await result
 
         try:
-            if command_result.skip_inject:
-                await self._transition(SessionState.IDLE)
-            elif final_text.strip() and self._config.inject.enabled:
+            if final_text.strip() and self._config.inject.enabled:
                 await self._transition(SessionState.INJECTING)
                 try:
                     await asyncio.wait_for(

@@ -41,7 +41,7 @@ class TkCaptureIndicator:
         self._thread = threading.Thread(
             target=self._run,
             name="navi-indicator",
-            daemon=True,
+            daemon=False,
         )
         self._thread.start()
         if not self._ready.wait(timeout=5.0) and self._failed.is_set():
@@ -158,16 +158,27 @@ class TkCaptureIndicator:
                     if cmd is None:
                         if after_id is not None:
                             root.after_cancel(after_id)
-                        window.withdraw()
-                        root.quit()
+                            after_id = None
+
+                        def shutdown_ui() -> None:
+                            window.withdraw()
+                            try:
+                                window.destroy()
+                            except tk.TclError:
+                                pass
+                            root.quit()
+
+                        root.after(0, shutdown_ui)
                         return
                     apply_command(cmd)
                 after_id = root.after(30, pump_queue)
 
             pump_queue()
             root.mainloop()
-            window.destroy()
-            root.destroy()
+            try:
+                root.destroy()
+            except tk.TclError:
+                pass
         except Exception:
             logger.exception("Capture indicator thread failed")
             self._failed.set()

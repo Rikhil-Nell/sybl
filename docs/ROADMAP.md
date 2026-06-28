@@ -216,7 +216,8 @@ seam** rather than starting fresh.
       prompt; `navi config vocab` CLI. *(Post-STT replacement dictionary deferred;
       future LLM pass reuses the same term list.)*
 - [ ] Optional LLM "format pass" (also BYOK) for tone/cleanup — deferred.
-- [x] Voice commands on the final transcript (`new line`, `scratch that`, etc.).
+- [x] Voice commands on the final transcript (`new line`, `period`, `comma`).
+      *(Scratch-that cancel removed — use Esc; transcripts stay in history.)*
 - [ ] Per-app profiles / language selection — out of scope for now (English-first).
 
 ## Phase 10 — Packaging, Docs & Open-Source Release

@@ -1,0 +1,6 @@
+#!/bin/sh
+# Reject Cursor agent co-author trailers. Enable with: git config core.hooksPath .githooks
+if grep -qi 'Co-authored-by:.*Cursor' "$1"; then
+  echo "error: commit message must not include Co-authored-by: Cursor trailers" >&2
+  exit 1
+fi

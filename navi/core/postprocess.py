@@ -52,6 +52,8 @@ def build_post_processor(config: PostProcessConfig) -> PostProcessor:
         passes.append(normalize_quotes)
     if config.trim_space_before_punctuation:
         passes.append(trim_space_before_punctuation)
+    if config.collapse_duplicate_punctuation:
+        passes.append(collapse_duplicate_punctuation)
     if config.capitalize:
         passes.append(capitalize_first)
     if config.ensure_punctuation:
@@ -94,6 +96,14 @@ def normalize_quotes(text: str) -> str:
 
 def trim_space_before_punctuation(text: str) -> str:
     return re.sub(r"\s+([,.!?;:])", r"\1", text)
+
+
+def collapse_duplicate_punctuation(text: str) -> str:
+    """Collapse doubled punctuation like ',,' or '..'."""
+    result = re.sub(r"([,.!?;:])\1+", r"\1", text)
+    result = re.sub(r"\s+([,.!?;:])", r"\1", result)
+    result = re.sub(r"([,.!?;:])\s+([,.!?;:])", r"\1", result)
+    return result
 
 
 def capitalize_first(text: str) -> str:

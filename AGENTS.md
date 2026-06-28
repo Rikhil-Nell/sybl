@@ -1,7 +1,7 @@
 # AGENTS.md
 
 > Living source of truth for the Navi project. Read this first. Keep it current.
-> Last updated: 2026-06-26 (Phase 9 complete)
+> Last updated: 2026-06-28 (scratch-that removed from voice commands)
 
 ---
 
@@ -111,7 +111,7 @@ The guiding principles:
 | Phase 7 TUI | **Textual dashboard** — logs, status, history, settings, BYOK onboarding | All config/key writes routed through daemon IPC; keyboard-driven MVP. |
 | Phase 8 indicator | **Windows tkinter overlay** on dedicated thread; `CaptureIndicator` protocol + `NoOpIndicator` elsewhere | Stdlib, no new deps; cursor position via ctypes; show on LISTENING, RMS level bar; degrade to no-op if tk fails (`docs/POPUP-SPIKE.md`). |
 | Phase 9 vocabulary | **STT hints only** — `vocabulary.toml` + Deepgram keyterms + Groq prompt at session start | Names/jargon at transcription source; no post-STT replacement map; term list reused by future LLM pass. |
-| Phase 9 voice commands | **Final-transcript parsing** — `new line`, `scratch that`, etc. | No streaming/wake-word required; runs after postprocess, before inject. |
+| Phase 9 voice commands | **Final-transcript parsing** — `new line`, `period`, `comma` | No streaming/wake-word; Esc cancels before STT/inject; no scratch-that erase. |
 
 High-level component map:
 

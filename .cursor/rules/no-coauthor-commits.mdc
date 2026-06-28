@@ -1,0 +1,9 @@
+# No agent co-author commit trailers
+
+When creating git commits in this repository:
+
+- **Never** add `Co-authored-by:` trailers (including `Co-authored-by: Cursor <cursoragent@cursor.com>`).
+- **Never** add any Cursor, Copilot, or AI agent attribution to commit messages.
+- Keep commit messages concise and focused on the change; author attribution is handled by git config only.
+
+If staging changes for the user to commit, leave the message body free of co-author lines.

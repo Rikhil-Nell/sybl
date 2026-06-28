@@ -50,6 +50,7 @@ class PostProcessConfig(BaseModel):
     collapse_repeated_words: bool = False
     normalize_quotes: bool = True
     trim_space_before_punctuation: bool = True
+    collapse_duplicate_punctuation: bool = True
 
 
 class VocabularyConfig(BaseModel):

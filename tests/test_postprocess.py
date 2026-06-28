@@ -64,6 +64,12 @@ def test_collapse_repeated_words() -> None:
     assert collapse_repeated_words("the the cat") == "the cat"
 
 
+def test_collapse_duplicate_punctuation() -> None:
+    from navi.core.postprocess import collapse_duplicate_punctuation
+
+    assert collapse_duplicate_punctuation("hello,, world..") == "hello, world."
+
+
 def test_process_text_empty_passthrough() -> None:
     config = PostProcessConfig()
     assert process_text(config, "   ") == "   "

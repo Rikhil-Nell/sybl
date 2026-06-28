@@ -417,7 +417,7 @@ def _check_voice_commands(config) -> list[CheckResult]:
         CheckResult(
             "Voice commands",
             CheckStatus.PASS,
-            "new line, scratch that, period, comma (final transcript)",
+            "new line, period, comma; Esc cancels before inject",
         )
     ]
 
