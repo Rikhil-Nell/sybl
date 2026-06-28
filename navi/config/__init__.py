@@ -7,6 +7,7 @@ from navi.config.models import (
     InjectConfig,
     LoggingConfig,
     NaviConfig,
+    PostProcessConfig,
     ProviderConfig,
 )
 from navi.config.paths import config_dir, config_path, log_path, state_dir
@@ -19,6 +20,7 @@ __all__ = [
     "InjectConfig",
     "LoggingConfig",
     "NaviConfig",
+    "PostProcessConfig",
     "ProviderConfig",
     "config_dir",
     "config_path",

@@ -11,6 +11,7 @@ import typer
 from navi.audio import AudioCaptureSession, AudioError
 from navi.cli.meter import meter_loop, wait_for_enter
 from navi.config import ConfigManager, log_path
+from navi.core.postprocess import process_text
 from navi.core.transcribe import transcribe_pcm, transcribe_stream
 from navi.logging import setup_logging
 from navi.providers import STTError, resolve_provider
@@ -154,7 +155,8 @@ async def _transcribe(
                 peak_dbfs=stats.peak_dbfs,
             )
 
-    typer.echo(f'Transcript: "{outcome.text}"')
+    final_text = process_text(navi_config.postprocess, outcome.text)
+    typer.echo(f'Transcript: "{final_text}"')
     model_label = outcome.model or "unknown"
     typer.echo(
         f"Provider: {outcome.provider} ({model_label}) | "

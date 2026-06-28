@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -65,6 +66,93 @@ async def test_activate_captures_focus_and_starts_listening(
 
 
 @pytest.mark.asyncio
+async def test_deactivate_applies_postprocess_before_inject(
+    navi_config: NaviConfig,
+    mock_injector: AsyncMock,
+) -> None:
+    controller = DictationController(navi_config, injector=mock_injector)
+    mock_session = _mock_session(duration_seconds=1.0)
+    focus = FocusTarget(hwnd=123, pid=456, title="Notepad")
+    outcome = TranscribeOutcome(
+        text="um uh hello world",
+        provider="groq",
+        model="whisper-large-v3-turbo",
+        audio_duration_seconds=1.0,
+        latency_seconds=0.5,
+        peak_dbfs=-10.0,
+    )
+
+    with (
+        patch("navi.core.dictation.capture_foreground", return_value=focus),
+        patch(
+            "navi.core.dictation.resolve_provider",
+            return_value=("groq", MagicMock()),
+        ),
+        patch("navi.core.dictation.AudioCaptureSession", return_value=mock_session),
+        patch(
+            "navi.core.dictation.transcribe_pcm",
+            AsyncMock(return_value=outcome),
+        ),
+    ):
+        await controller.handle_hotkey_event(HotkeyEvent.ACTIVATE)
+        await controller.handle_hotkey_event(HotkeyEvent.DEACTIVATE)
+
+    mock_injector.inject.assert_awaited_once_with("Hello world", focus)
+
+
+@pytest.mark.asyncio
+async def test_deactivate_awaits_running_stream_task(
+    mock_injector: AsyncMock,
+) -> None:
+    config = NaviConfig(
+        hotkey=HotkeyConfig(min_duration_ms=250, streaming="on"),
+        inject=InjectConfig(enabled=True),
+    )
+    controller = DictationController(config, injector=mock_injector)
+    mock_session = _mock_session(duration_seconds=1.0)
+    focus = FocusTarget(hwnd=123, pid=456, title="Notepad")
+    outcome = TranscribeOutcome(
+        text="hello world",
+        provider="deepgram",
+        model="nova-3",
+        audio_duration_seconds=1.0,
+        latency_seconds=0.5,
+        peak_dbfs=-10.0,
+    )
+    release_stream = asyncio.Event()
+
+    async def slow_stream(*_args, **_kwargs):
+        await release_stream.wait()
+        return outcome
+
+    with (
+        patch("navi.core.dictation.capture_foreground", return_value=focus),
+        patch(
+            "navi.core.dictation.resolve_provider",
+            return_value=("deepgram", MagicMock()),
+        ),
+        patch("navi.core.dictation.AudioCaptureSession", return_value=mock_session),
+        patch(
+            "navi.core.dictation.transcribe_stream",
+            side_effect=slow_stream,
+        ),
+    ):
+        await controller.handle_hotkey_event(HotkeyEvent.ACTIVATE)
+        assert controller._stream_task is not None
+        assert not controller._stream_task.done()
+
+        deactivate_task = asyncio.create_task(
+            controller.handle_hotkey_event(HotkeyEvent.DEACTIVATE),
+        )
+        await asyncio.sleep(0)
+        release_stream.set()
+        await deactivate_task
+
+    assert controller.state is SessionState.IDLE
+    mock_injector.inject.assert_awaited_once_with("Hello world", focus)
+
+
+@pytest.mark.asyncio
 async def test_deactivate_injects_transcript_and_returns_idle(
     navi_config: NaviConfig,
     mock_injector: AsyncMock,
@@ -98,7 +186,7 @@ async def test_deactivate_injects_transcript_and_returns_idle(
 
     assert controller.state is SessionState.IDLE
     mock_transcribe.assert_awaited_once()
-    mock_injector.inject.assert_awaited_once_with("hello", focus)
+    mock_injector.inject.assert_awaited_once_with("Hello", focus)
 
 
 @pytest.mark.asyncio

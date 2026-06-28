@@ -22,6 +22,13 @@ def test_defaults_validate() -> None:
     assert config.inject.enabled is True
     assert config.inject.strategy == "paste"
     assert config.inject.restore_clipboard is True
+    assert config.postprocess.enabled is True
+    assert config.postprocess.trim_fillers is True
+    assert config.postprocess.capitalize is True
+    assert config.postprocess.ensure_punctuation is False
+    assert config.ipc.host == "127.0.0.1"
+    assert config.ipc.history_size == 100
+    assert config.ui.onboarding_complete is False
 
 
 def test_load_returns_defaults_when_missing(tmp_config_path: Path) -> None:

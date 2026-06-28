@@ -157,10 +157,44 @@ def run_checks() -> list[CheckResult]:
         results.extend(_check_providers(config))
         results.extend(_check_hotkeys(config))
         results.extend(_check_inject(config))
+        results.extend(_check_postprocess(config))
 
+    results.extend(_check_daemon())
     results.extend(_check_audio())
 
     return results
+
+
+def _check_daemon() -> list[CheckResult]:
+    from navi.ipc.client import is_daemon_running, load_daemon_info
+
+    info = load_daemon_info()
+    if info is None:
+        return [
+            CheckResult(
+                "Daemon IPC",
+                CheckStatus.WARN,
+                "Daemon not running (start with `navi start`)",
+            )
+        ]
+    if not is_daemon_running():
+        return [
+            CheckResult(
+                "Daemon IPC",
+                CheckStatus.WARN,
+                f"Stale daemon.json (pid={info.pid} not running)",
+            )
+        ]
+    return [
+        CheckResult(
+            "Daemon IPC",
+            CheckStatus.PASS,
+            (
+                f"Running pid={info.pid} "
+                f"command={info.command_port} events={info.event_port}"
+            ),
+        )
+    ]
 
 
 def _check_providers(_config) -> list[CheckResult]:
@@ -285,6 +319,36 @@ def _check_inject(config) -> list[CheckResult]:
         )
 
     return results
+
+
+def _check_postprocess(config) -> list[CheckResult]:
+    from navi.core.postprocess import process_text
+
+    if not config.postprocess.enabled:
+        return [
+            CheckResult(
+                "Post-processing",
+                CheckStatus.WARN,
+                "disabled in config (raw provider text used)",
+            )
+        ]
+
+    sample = process_text(config.postprocess, "  um hello world  ")
+    enabled = []
+    if config.postprocess.trim_fillers:
+        enabled.append("fillers")
+    if config.postprocess.capitalize:
+        enabled.append("capitalize")
+    if config.postprocess.ensure_punctuation:
+        enabled.append("punctuation")
+    flags = ", ".join(enabled) if enabled else "whitespace only"
+    return [
+        CheckResult(
+            "Post-processing",
+            CheckStatus.PASS,
+            f"{flags}; sample -> {sample!r}",
+        )
+    ]
 
 
 def _check_audio() -> list[CheckResult]:

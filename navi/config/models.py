@@ -42,6 +42,13 @@ class InjectConfig(BaseModel):
     restore_clipboard: bool = True
 
 
+class PostProcessConfig(BaseModel):
+    enabled: bool = True
+    trim_fillers: bool = True
+    capitalize: bool = True
+    ensure_punctuation: bool = False
+
+
 class AudioConfig(BaseModel):
     device: str | None = None
     sample_rate: int = 16000
@@ -55,9 +62,23 @@ class LoggingConfig(BaseModel):
     ring_buffer_size: int = 500
 
 
+class IpcConfig(BaseModel):
+    host: str = "127.0.0.1"
+    command_port: int = 0
+    event_port: int = 0
+    history_size: int = 100
+
+
+class UiConfig(BaseModel):
+    onboarding_complete: bool = False
+
+
 class NaviConfig(BaseModel):
     provider: ProviderConfig = Field(default_factory=ProviderConfig)
     hotkey: HotkeyConfig = Field(default_factory=HotkeyConfig)
     inject: InjectConfig = Field(default_factory=InjectConfig)
+    postprocess: PostProcessConfig = Field(default_factory=PostProcessConfig)
     audio: AudioConfig = Field(default_factory=AudioConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
+    ipc: IpcConfig = Field(default_factory=IpcConfig)
+    ui: UiConfig = Field(default_factory=UiConfig)

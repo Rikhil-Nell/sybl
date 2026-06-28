@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Awaitable, Callable
 from dataclasses import replace
 
 from navi.audio import AudioCaptureSession, AudioError
 from navi.config.models import NaviConfig
+from navi.core.postprocess import process_text
 from navi.core.state import SessionState, StateMachine
 from navi.core.transcribe import TranscribeOutcome, transcribe_pcm, transcribe_stream
 from navi.hotkeys.base import HotkeyEvent
@@ -17,6 +19,12 @@ from navi.providers import STTError, resolve_provider
 from navi.providers.capabilities import provider_capabilities
 
 logger = logging.getLogger("navi.core.dictation")
+
+StateChangedCallback = Callable[[SessionState], Awaitable[None] | None]
+TranscriptCallback = Callable[
+    [TranscribeOutcome, str, str],
+    Awaitable[None] | None,
+]
 
 
 class DictationController:
@@ -28,6 +36,8 @@ class DictationController:
         *,
         verbose: bool = False,
         injector: TextInjector | None = None,
+        on_state_changed: StateChangedCallback | None = None,
+        on_transcript: TranscriptCallback | None = None,
     ) -> None:
         self._config = config
         self._verbose = verbose
@@ -40,6 +50,8 @@ class DictationController:
         self._use_streaming = False
         self._injector = injector or create_injector(config)
         self._lock = asyncio.Lock()
+        self._on_state_changed = on_state_changed
+        self._on_transcript = on_transcript
 
     @property
     def state(self) -> SessionState:
@@ -48,6 +60,23 @@ class DictationController:
     @property
     def focus_target(self) -> FocusTarget | None:
         return self._focus
+
+    @property
+    def current_level(self) -> float:
+        if self._session is None:
+            return 0.0
+        return self._session.current_level
+
+    def update_config(self, config: NaviConfig) -> None:
+        self._config = config
+        self._injector = create_injector(config)
+
+    async def _transition(self, to: SessionState) -> None:
+        self._state.transition(to)
+        if self._on_state_changed is not None:
+            result = self._on_state_changed(to)
+            if asyncio.iscoroutine(result):
+                await result
 
     async def handle_hotkey_event(self, event: HotkeyEvent) -> None:
         async with self._lock:
@@ -87,14 +116,14 @@ class DictationController:
             streaming_required=streaming_required,
         )
 
-        self._state.transition(SessionState.LISTENING)
+        await self._transition(SessionState.LISTENING)
         self._session = AudioCaptureSession(self._config.audio)
 
         try:
             await self._session.start()
         except AudioError:
-            self._state.transition(SessionState.ERROR)
-            self._state.transition(SessionState.IDLE)
+            await self._transition(SessionState.ERROR)
+            await self._transition(SessionState.IDLE)
             await self._reset_session()
             raise
 
@@ -127,8 +156,8 @@ class DictationController:
             pcm = await session.stop()
         except AudioError as exc:
             logger.error("Audio capture failed: %s", exc)
-            self._state.transition(SessionState.ERROR)
-            self._state.transition(SessionState.IDLE)
+            await self._transition(SessionState.ERROR)
+            await self._transition(SessionState.IDLE)
             await self._reset_session()
             return
 
@@ -145,17 +174,14 @@ class DictationController:
                     await self._stream_task
                 except asyncio.CancelledError:
                     pass
-            self._state.transition(SessionState.IDLE)
+            await self._transition(SessionState.IDLE)
             await self._reset_session()
             return
 
-        self._state.transition(SessionState.PROCESSING)
+        await self._transition(SessionState.PROCESSING)
 
         try:
             if self._use_streaming and self._stream_task is not None:
-                stream_exc = self._stream_task.exception()
-                if self._stream_task.done() and stream_exc is not None:
-                    await self._stream_task
                 outcome = await self._stream_task
                 outcome = replace(
                     outcome,
@@ -175,8 +201,8 @@ class DictationController:
         except STTError as exc:
             logger.error("Transcription failed: %s", exc)
             if self._state.state is SessionState.PROCESSING:
-                self._state.transition(SessionState.ERROR)
-                self._state.transition(SessionState.IDLE)
+                await self._transition(SessionState.ERROR)
+                await self._transition(SessionState.IDLE)
             await self._reset_session()
             return
 
@@ -184,33 +210,54 @@ class DictationController:
         await self._finish_outcome(outcome)
 
     async def _finish_outcome(self, outcome: TranscribeOutcome) -> None:
+        final_text = process_text(self._config.postprocess, outcome.text)
+        if (
+            self._config.postprocess.enabled
+            and final_text != outcome.text
+        ):
+            logger.debug(
+                "Post-processed transcript: %r -> %r",
+                outcome.text,
+                final_text,
+            )
+
+        if self._on_transcript is not None:
+            result = self._on_transcript(outcome, outcome.text, final_text)
+            if asyncio.iscoroutine(result):
+                await result
+
         try:
-            if outcome.text.strip() and self._config.inject.enabled:
-                self._state.transition(SessionState.INJECTING)
+            if final_text.strip() and self._config.inject.enabled:
+                await self._transition(SessionState.INJECTING)
                 try:
                     await asyncio.wait_for(
-                        self._injector.inject(outcome.text, self._focus),
+                        self._injector.inject(final_text, self._focus),
                         timeout=15.0,
                     )
                 except TimeoutError as exc:
                     raise InjectError("Injection timed out after 15s") from exc
                 logger.info("Injected transcript into focused application")
-            self._state.transition(SessionState.IDLE)
+            elif final_text.strip():
+                logger.info(
+                    "Final transcript: %s",
+                    final_text,
+                )
+            await self._transition(SessionState.IDLE)
         except InjectError as exc:
             logger.error("Injection failed: %s", exc)
             if self._state.state is SessionState.INJECTING:
-                self._state.transition(SessionState.ERROR)
+                await self._transition(SessionState.ERROR)
             elif self._state.state is SessionState.PROCESSING:
-                self._state.transition(SessionState.ERROR)
-            self._state.transition(SessionState.IDLE)
+                await self._transition(SessionState.ERROR)
+            await self._transition(SessionState.IDLE)
         except Exception:
             logger.exception("Injection failed unexpectedly")
             if self._state.state is SessionState.INJECTING:
-                self._state.transition(SessionState.ERROR)
+                await self._transition(SessionState.ERROR)
             elif self._state.state is SessionState.PROCESSING:
-                self._state.transition(SessionState.ERROR)
+                await self._transition(SessionState.ERROR)
             if self._state.state is not SessionState.IDLE:
-                self._state.transition(SessionState.IDLE)
+                await self._transition(SessionState.IDLE)
         await self._reset_session()
 
     async def _on_cancel(self) -> None:
@@ -219,8 +266,8 @@ class DictationController:
 
         logger.info("Dictation cancelled")
         await self._cleanup_session(cancel=True)
-        self._state.transition(SessionState.CANCELLED)
-        self._state.transition(SessionState.IDLE)
+        await self._transition(SessionState.CANCELLED)
+        await self._transition(SessionState.IDLE)
 
     async def _cleanup_session(self, *, cancel: bool) -> None:
         if self._stream_task is not None:
