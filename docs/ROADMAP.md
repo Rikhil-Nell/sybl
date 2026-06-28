@@ -224,12 +224,12 @@ seam** rather than starting fresh.
 
 Goal: ship it so others can install and contribute.
 
-- [ ] README with quickstart + the BYOK provider setup guide.
-- [ ] Distribution: PyPI (`uv`/`pipx` install) and platform notes.
-- [ ] Permissions guide (mic + accessibility/input permissions per OS).
-- [ ] LICENSE (OSI-approved), CONTRIBUTING, issue/PR templates.
-- [ ] CI: lint, type-check, tests across platforms.
-- [ ] Versioned releases.
+- [x] README with quickstart + the BYOK provider setup guide.
+- [x] Distribution: PyPI (`uv`/`pipx` install) and platform notes.
+- [x] Permissions guide (mic + accessibility/input permissions per OS).
+- [x] LICENSE (OSI-approved), CONTRIBUTING, issue/PR templates.
+- [x] CI: lint, type-check, tests across platforms.
+- [x] Versioned releases (v0.1.0).
 
 ---
 
