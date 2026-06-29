@@ -1,0 +1,24 @@
+name: Cross-platform check
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "sybl/**"
+      - "tests/**"
+      - "scripts/check_unixisms.py"
+
+jobs:
+  unixisms:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Scan changed files for Unix-only patterns
+        run: uv run python scripts/check_unixisms.py

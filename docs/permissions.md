@@ -53,9 +53,26 @@ Expected future considerations:
 
 ## Privacy
 
-- API keys: OS keyring only
+- API keys: OS keyring only (see below)
 - Audio: sent to your configured STT provider during active sessions only
 - Transcripts: kept in local daemon history (configurable size); not sent to sybl servers
 - Debug WAV: optional last recording saved locally when `save_last_recording = true`
+
+## Secrets and the OS keyring
+
+sybl stores provider API keys in the **OS keyring**, not in `config.toml`. You set
+them with `sybl config set-key <provider>`.
+
+| Stored in | Examples |
+| --- | --- |
+| `config.toml` | Hotkey, provider name, post-process flags — safe to back up |
+| OS keyring | Groq, Deepgram, etc. API keys |
+
+**Threat model:** the keyring is **per user account**, not per application. Any
+program running as you could read entries if it knows the service name (`sybl`).
+This is standard for desktop CLI tools — much safer than plaintext config files,
+but not malware-proof. See `sybl doctor` for keyring backend status.
+
+For deeper live checks (network, mic, clipboard), run `sybl doctor --live`.
 
 See [SECURITY.md](../SECURITY.md) for vulnerability reporting.

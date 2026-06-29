@@ -7,8 +7,15 @@ import sys
 from sybl.config.models import SyblConfig
 from sybl.indicator.base import CaptureIndicator
 from sybl.indicator.noop import NoOpIndicator
+from sybl.indicator.sound import IndicatorSoundCue, create_sound_cue
 
-__all__ = ["CaptureIndicator", "NoOpIndicator", "create_indicator"]
+__all__ = [
+    "CaptureIndicator",
+    "IndicatorSoundCue",
+    "NoOpIndicator",
+    "create_indicator",
+    "create_sound_cue",
+]
 
 
 def create_indicator(config: SyblConfig) -> CaptureIndicator:

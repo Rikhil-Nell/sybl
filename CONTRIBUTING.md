@@ -23,7 +23,19 @@ uv run sybl doctor
 
 ## Running tests
 
-Unit tests (no mic or live API keys):
+Prefer the hermetic runner (CI parity — isolated config/state, fixed TZ/LANG):
+
+```powershell
+python scripts/run_tests.py
+```
+
+On Linux/macOS with bash:
+
+```bash
+./scripts/run_tests.sh
+```
+
+Or manually:
 
 ```powershell
 uv run ruff check sybl tests
@@ -35,6 +47,12 @@ Integration tests (real hardware / live STT — manual only):
 ```powershell
 uv run pytest -m integration
 ```
+
+## Dependency policy
+
+All PyPI dependencies use `>=floor,<next_major` upper bounds in `pyproject.toml`.
+Post-1.0 packages cap at the next major (e.g. `numpy>=2.0.0,<3`). Reject unbounded
+`>=` specs in PRs.
 
 ## Pull requests
 
@@ -73,6 +91,14 @@ workflow (`.github/workflows/release.yml`).
    - Environment name: *(leave blank)*
 3. Push a tag and publish a GitHub Release — the workflow builds with `uv build`
    and uploads via OIDC (no long-lived API token required).
+
+**v0.1.1 release checklist:**
+
+- [ ] All v0.1.1 items in `docs/ROADMAP.md` checked
+- [ ] `python scripts/run_tests.py` green locally
+- [ ] `CHANGELOG.md` 0.1.1 section complete
+- [ ] Bump `version` in `pyproject.toml` to `0.1.1`
+- [ ] `git tag v0.1.1` + GitHub Release → PyPI workflow
 
 For local packaging smoke tests:
 

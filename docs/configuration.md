@@ -36,9 +36,11 @@ separate state directory under the same app name (`sybl`).
 
 | Key | Default | Description |
 | --- | --- | --- |
-| `binding` | `"ctrl+alt+space"` | Push-to-talk chord |
-| `mode` | `"ptt"` | Interaction mode (PTT only today) |
-| `cancel_binding` | `"esc"` | Cancel while holding PTT |
+| `binding` | `"ctrl+alt+space"` | Activation chord |
+| `mode` | `"both"` | `"ptt"`, `"toggle"`, or `"both"` (hold + double-press together) |
+| `cancel_binding` | `"esc"` | Cancel while listening |
+| `ptt_hold_ms` | `200` | In `both` mode, hold this long before PTT starts (avoids toggle clash) |
+| `toggle_double_press_ms` | `400` | Max gap between chord presses for toggle start (200–1000) |
 | `streaming` | `"auto"` | `"auto"`, `"on"`, or `"off"` |
 | `min_duration_ms` | `250` | Ignore taps shorter than this |
 
@@ -132,6 +134,34 @@ Supported phrases: `new line` / `newline`, `period`, `comma`.
 | `size_px` | `48` | Pill size (pixels) |
 | `offset_x` | `16` | Offset from cursor |
 | `offset_y` | `16` | Offset from cursor |
+| `sound_enabled` | `false` | Two-note chime on listen start/stop (cross-platform) |
+| `sound_on_start` | `true` | Play cue when listening begins |
+| `sound_on_stop` | `true` | Play cue when listening ends |
+| `sound_volume` | `0.75` | Chime loudness (`0.0`–`1.0`) |
+| `sound_start_file` | *(unset)* | Optional WAV filename or path for listen-start cue |
+| `sound_stop_file` | *(unset)* | Optional WAV filename or path for listen-stop cue |
+| `sound_max_seconds` | `0.5` | Max cue length; longer files are trimmed automatically (up to `2.0`) |
+
+### Custom sound cues
+
+On `sybl config init`, sybl creates a **`sounds/`** folder next to `config.toml`:
+
+```
+%LOCALAPPDATA%\sybl\sybl\
+  config.toml
+  sounds\
+    README.txt
+    start.wav   # optional — plays when listening begins
+    stop.wav    # optional — plays when listening ends
+```
+
+Enable with `sound_enabled = true`. If a file is missing, sybl falls back to the
+built-in two-note chime. Files longer than `sound_max_seconds` are trimmed — no need
+to edit them down first. Override filenames with `sound_start_file` / `sound_stop_file`
+(relative to the sounds folder, or an absolute path).
+
+**TUI:** `sybl tui` → Settings (`s`) — toggle sound, set volume, browse or paste a path
+to import WAV files, or pick **Built-in chime** per cue.
 
 On non-Windows platforms the overlay degrades to a no-op.
 

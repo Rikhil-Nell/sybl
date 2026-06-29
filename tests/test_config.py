@@ -15,7 +15,7 @@ def test_defaults_validate() -> None:
     assert config.audio.block_duration_ms == 20
     assert config.audio.save_last_recording is True
     assert config.logging.ring_buffer_size == 500
-    assert config.hotkey.mode == "ptt"
+    assert config.hotkey.mode == "both"
     assert config.hotkey.cancel_binding == "esc"
     assert config.hotkey.streaming == "auto"
     assert config.hotkey.min_duration_ms == 250
@@ -81,6 +81,11 @@ def test_invalid_schema_raises_config_error(tmp_config_path: Path) -> None:
 
     with pytest.raises(ConfigError, match="Invalid configuration"):
         manager.load()
+
+
+def test_invalid_hotkey_binding_raises() -> None:
+    with pytest.raises(ValueError, match="Invalid hotkey binding"):
+        SyblConfig(hotkey={"binding": "not+a+valid+binding!!!"})
 
 
 def test_migrates_legacy_hotkey_binding(tmp_config_path: Path) -> None:

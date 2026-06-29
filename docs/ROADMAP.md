@@ -233,6 +233,156 @@ Goal: ship it so others can install and contribute.
 
 ---
 
+## Release plan (post v0.1.0)
+
+Phases 0–10 are the historical build plan. **Going forward, work ships in
+semver releases.** Patch releases (0.1.x) are incremental — deferred items from
+the phase plan, hygiene, and stability. Minor releases (0.2.0+) carry new
+providers, platform ports, and larger features.
+
+| Release | Theme |
+|---------|--------|
+| **v0.1.0** | First public release (Phases 0–10) |
+| **v0.1.1** | Incremental — finish deferred v0.1.0 gaps + project hygiene |
+| **v0.1.2** | Heavy TUI overhaul — terminal UX is the product surface |
+| **v0.2.0** | Next milestone — new STT providers, macOS/Linux backends, native helpers |
+
+---
+
+## v0.1.1 — Incremental patch ★
+
+Goal: close the small deferred items from the v0.1.0 ship, harden the project
+for contributors, and fix real-world rough edges — **no large new subsystems**.
+
+### Deferred from v0.1.0 (ship now)
+
+- [x] **Double-press toggle mode** — constant recording; press again to stop
+      (Phase 4; debounce/timing tuning; PTT remains default).
+- [x] **In-TUI hotkey rebinding** — change the PTT/toggle binding from Settings
+      without editing `config.toml` by hand (Phase 7 deferral).
+- [x] **Indicator sound cue** — optional short audio on listen start/stop
+      (`[indicator]` config; graceful no-op when audio unavailable).
+
+### Hygiene & contributor surface (Hermes-shaped)
+
+- [x] **Dependency upper bounds** — `>=floor,<next_major` on all PyPI deps in
+      `pyproject.toml`; document policy in `CONTRIBUTING.md`.
+- [x] **`scripts/run_tests.sh`** — hermetic test runner (isolated config home,
+      TZ/LANG parity with CI); prefer over raw `pytest` in docs.
+- [x] **AGENTS.md contribution rubric** — want/don't-want, footprint ladder,
+      verify-premise-before-fix (adapted from hermes-agent).
+- [x] **Cross-platform CI grep** — workflow or lint pass flagging Unix-only
+      patterns in diffs (`fcntl`, hardcoded `/tmp`, `os.kill(pid, 0)`, etc.).
+
+### Quality & diagnostics
+
+- [x] **`sybl doctor` depth** — `sybl doctor --live` for reachability ping, mic
+      capture smoke, inject self-test (actionable remediation lines).
+- [x] **Stability pass** — TUI IPC error visibility, reconnect banner, IPC
+      connect timeouts, daemon hotkey reload ordering.
+- [x] **Docs touch-up** — permissions threat model (keyring vs config), install
+      time expectations, toggle-mode usage.
+
+### Explicitly rejected for v0.1.1
+
+- **Post-STT vocabulary replacement** — STT hints only (`sybl config vocab` terms);
+  no downstream find-and-replace map.
+
+### Explicitly out of scope for v0.1.1
+
+AssemblyAI/Gladia providers, macOS/Linux hotkey/inject/indicator backends,
+native hotkey helper, LLM format pass, synthetic keystroke injection,
+per-app profiles, VAD (`webrtcvad` / `silero-vad`), waveform indicator polish,
+tray-icon fallback — these stay on the backlog for v0.2.0+ unless a critical
+fix forces an exception.
+
+---
+
+## v0.1.2 — Heavy TUI overhaul ★
+
+Goal: the TUI is sybl's only UI — make it feel as polished as the dictation
+loop. Inspired by hermes-agent's terminal UX discipline: **instant first frame,
+non-blocking attach, modal overlays, one backend / thin client.**
+
+> v0.1.2 is a **UI release**, not a feature dump. New providers and OS ports
+> wait for v0.2.0.
+
+### Architecture (before pixels)
+
+- [ ] **Thin-client contract** — document and enforce: TUI never owns config,
+      keys, or state; all writes go through daemon IPC; widgets are pure views.
+- [ ] **Event-driven refresh** — replace polling-heavy paths with IPC event
+      subscriptions where possible (state, level, history append, log tail).
+- [ ] **Instant attach** — dashboard shell renders on first frame; data fills in
+      progressively (status → logs → history) so `sybl tui` never feels frozen.
+- [ ] **Central UI action registry** — one map of keybindings / slash-style
+      commands shared by dashboard, settings modals, and onboarding (no drift).
+
+### Layout & navigation
+
+- [ ] **Dashboard redesign** — clear visual hierarchy: status hero, live meter,
+      logs + history with resizable or tabbed panes; consistent header/footer.
+- [ ] **Modal overlays** — settings, provider/key setup, vocab edit as stacked
+      modals (not full-screen screen swaps); Esc dismisses without losing context.
+- [ ] **Onboarding wizard** — step-by-step BYOK flow (provider → key → test
+      mic → first dictation) with progress indicator; skippable on return visits.
+- [ ] **History UX** — search/filter, expanded preview, copy/export selected
+      entry, keyboard navigation audit (↑/↓/Enter/copy).
+- [ ] **Log UX** — level filter (INFO/WARN/ERROR), auto-scroll toggle, dim
+      timestamps; optional source/component tags if daemon emits them.
+
+### Live feedback
+
+- [ ] **In-TUI mic meter** — RMS level bar (and optional sparkline) while daemon
+      is in `LISTENING`; mirrors indicator pill data from IPC events.
+- [ ] **State machine visibility** — idle / listening / processing / injecting
+      shown prominently with provider name and session timing.
+- [ ] **Connection health** — daemon attach/reconnect indicator; graceful
+      offline mode when IPC drops (retry banner, read-only history).
+
+### Polish
+
+- [ ] **Textual design system** — shared CSS tokens (panels, borders, accent,
+      status colors); dark-first; readable on Windows Terminal + common Linux terms.
+- [ ] **Notification toasts** — config saved, key stored, copy succeeded, inject
+      errors — non-blocking, consistent placement.
+- [ ] **Help overlay** — `?` shows keybindings and quick commands in a modal.
+- [ ] **Screenshot / docs figures** — update README and getting-started with the
+      new TUI layout.
+
+### Testing
+
+- [ ] **TUI widget tests** — Textual pilot tests for onboarding flow, settings
+      modal save → IPC mock, history selection/copy.
+- [ ] **IPC integration tests** — event stream drives widget updates without a
+      live daemon where feasible.
+
+### Deferred to v0.2.0+ (even if tempting in UI work)
+
+Ink/React second frontend, web dashboard, Electron app, skins marketplace,
+mouse-required flows, per-app profile UI.
+
+---
+
+## v0.2.0 — Backlog preview (not scheduled)
+
+Items deferred across Phases 3–9 and open questions — **not** part of 0.1.x:
+
+- [ ] AssemblyAI streaming provider.
+- [ ] Gladia provider (multilingual demand).
+- [ ] macOS hotkeys (Accessibility) + injection + indicator backends.
+- [ ] Linux X11 injection; honest Wayland documentation/fallback.
+- [ ] Native hotkey helper (Rust `global-hotkey` escape hatch).
+- [ ] Secondary synthetic keystroke injection strategy.
+- [ ] Optional BYOK LLM format pass.
+- [ ] VAD for silence trim (`webrtcvad` or `silero-vad`).
+- [ ] Indicator: cursor-follow every frame, waveform, tray-icon fallback.
+- [ ] Per-app profiles / language selection.
+- [ ] Streaming vs batch as configurable default UX.
+- [ ] Local/offline STT hook (capability flags only until implemented).
+
+---
+
 ## Critical path (the shortest line to "it works")
 
 ```
@@ -247,15 +397,12 @@ Proven on **Windows first**. After this line, sybl already does the core job fro
 the keyboard with usable output. Phases 3, 6, 7, 8+ make it robust, always-on,
 observable, multi-provider, and pleasant.
 
-## Open questions to resolve along the way
+## Open questions (tracked in v0.2.0 backlog)
 
-- Popup rendering: which mechanism per platform, and how to position it near the
-  cursor — **Windows tkinter MVP done**; macOS/Linux TBD.
-- Streaming vs batch as the **default** UX (latency vs accuracy vs cost) — the
-  interface supports both; which is the default ships as a decision.
-- Wayland text injection limitations and the best fallback (post-Windows).
-- How aggressive the default post-processing should be (Phase 5.5 / Phase 9).
-- When to invest in a **native helper** for hotkeys and/or injection (after
-  `pynput` + paste plateau on Windows).
-- Local/offline STT (e.g. faster-whisper): out of scope for BYOK v1; capability
-  flags should leave room for it later without redesign.
+- Popup rendering on macOS/Linux — Windows tkinter MVP done.
+- Streaming vs batch as the **default** UX (latency vs accuracy vs cost).
+- Wayland text injection limitations and the best fallback.
+- How aggressive the default post-processing should be.
+- When to invest in a **native helper** for hotkeys and/or injection.
+- Local/offline STT (e.g. faster-whisper): capability flags should leave room
+  without redesign.

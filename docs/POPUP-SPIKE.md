@@ -39,4 +39,7 @@ macOS/Linux: `CaptureIndicator` protocol + `NoOpIndicator` until platform impls 
 - Cursor-following every frame
 - Waveform animation
 - Tray icon fallback mode
-- Sound cue on activate
+
+## Shipped (v0.1.1)
+
+- Sound cue on listen start/stop (`[indicator] sound_enabled`, Windows beep)

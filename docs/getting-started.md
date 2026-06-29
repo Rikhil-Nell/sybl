@@ -15,6 +15,8 @@ pipx install sybl
 uv tool install sybl
 ```
 
+First install pulls ~45 Python packages — allow 1–3 minutes on a cold install.
+
 For development from source, see [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ## Prerequisites
@@ -31,6 +33,8 @@ For development from source, see [DEVELOPMENT.md](DEVELOPMENT.md).
 sybl doctor
 ```
 
+For network, mic, and clipboard probes: `sybl doctor --live` (needs API key and mic).
+
 Fix anything flagged (missing deps, mic permissions, etc.) before continuing.
 
 ### 2. Initialize config
@@ -39,8 +43,9 @@ Fix anything flagged (missing deps, mic permissions, etc.) before continuing.
 sybl config init
 ```
 
-This creates `config.toml` under your sybl config directory (typically
-`%APPDATA%\sybl\config.toml` on Windows).
+This creates `config.toml` and a **`sounds/`** folder under your sybl config directory
+(typically `%LOCALAPPDATA%\sybl\sybl\` on Windows). Drop `start.wav` and `stop.wav`
+there for custom listen cues, or import them from **TUI Settings** (`sybl tui` → `s`).
 
 ### 3. Store an API key
 
@@ -58,12 +63,16 @@ sybl config set-key deepgram
 sybl start
 ```
 
-The daemon listens for the global hotkey and owns the microphone. Leave this terminal
-running (or run it in the background).
+This starts sybl in the **background** and returns your terminal. Logs go to the log
+file shown on startup. Stop with `sybl stop`.
+
+For debugging (blocks the terminal, prints logs to stderr):
+
+```powershell
+sybl start --foreground
+```
 
 ### 5. Attach the TUI (optional but recommended)
-
-In a second terminal:
 
 ```powershell
 sybl tui
@@ -74,15 +83,40 @@ first run with no keys, a BYOK onboarding wizard appears.
 
 ## Dictate
 
-1. Click into any text field (Notepad, browser, IDE, etc.).
-2. Hold **Ctrl+Alt+Space** (default hotkey).
-3. Speak your sentence.
-4. Release the hotkey — sybl transcribes and pastes the result.
+Default hotkey mode is **`both`** (Wispr-style): push-to-talk and toggle on the same
+binding.
 
-While holding the hotkey, press **Esc** to cancel before anything is pasted.
+### Push-to-talk
 
-A small **listening pill** appears near your cursor on Windows while you hold the
-hotkey.
+1. Click into any text field.
+2. **Hold** **Ctrl+Alt+Space** (~200ms in `both` mode, immediately in `ptt`-only mode).
+3. Speak, then **release** — sybl transcribes and pastes.
+
+### Toggle (hands-free)
+
+1. **Double-press** **Ctrl+Alt+Space** quickly (within 400ms by default).
+2. Speak — recording continues after you release the keys.
+3. **Press the hotkey once** while listening to stop and paste.
+
+### Config
+
+In `config.toml`:
+
+```toml
+[hotkey]
+mode = "both"              # ptt | toggle | both (default: both)
+binding = "ctrl+alt+space"
+ptt_hold_ms = 200          # both mode only — hold before PTT fires
+toggle_double_press_ms = 400
+```
+
+Or change mode/binding in the TUI: `sybl tui` → **Settings** (`s`).
+
+Press **Esc** while listening to cancel before paste.
+
+A small **listening pill** follows your cursor on Windows while dictating. Optional
+**sound cues** play on listen start/stop — configure in TUI Settings or
+`[indicator]` in config; see [configuration.md](configuration.md).
 
 ## Other useful commands
 
@@ -96,10 +130,10 @@ sybl transcribe --seconds 5   # One-shot record + transcribe (no daemon)
 
 ## Customize
 
-- **Hotkey binding** — `[hotkey] binding` in `config.toml` (default avoids
-  `ctrl+shift+space`, which Windows Terminal uses for a new window)
+- **Hotkey binding / mode** — TUI Settings (`s`) or `[hotkey]` in `config.toml`
+- **Sound cues** — TUI Settings (browse/import WAV, volume) or `sounds/start.wav` /
+  `sounds/stop.wav`; see [configuration.md](configuration.md)
 - **Provider** — `[provider] preferred` and model settings; see [providers.md](providers.md)
-- **Vocabulary** — `sybl config vocab add YourName`; see [configuration.md](configuration.md)
 
 ## Troubleshooting
 

@@ -7,6 +7,7 @@ import asyncio
 import typer
 
 from sybl.config import ConfigManager
+from sybl.config.sounds import ensure_sounds_layout
 from sybl.config.vocabulary import VocabularyError, VocabularyStore
 from sybl.ipc.client import IpcClient, IpcConnectionError, is_daemon_running
 from sybl.secrets import (
@@ -37,7 +38,10 @@ def config_init_command() -> None:
         raise typer.Exit(code=1)
 
     config = manager.init()
+    sounds_path = ensure_sounds_layout()
     typer.echo(f"Created default config at {manager.path}")
+    typer.echo(f"Sound cues folder: {sounds_path}")
+    typer.echo("Drop start.wav and stop.wav there, or import from TUI Settings.")
     typer.echo(config.model_dump_json(indent=2))
 
 

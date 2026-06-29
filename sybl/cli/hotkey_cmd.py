@@ -28,9 +28,20 @@ def hotkey_test_command(
     config = config_manager.load()
     setup_logging(config.logging, log_file=log_path(), verbose=verbose)
 
-    typer.echo(f"Binding: {config.hotkey.binding} ({config.hotkey.mode})")
+    typer.echo(f"Binding: {config.hotkey.binding} (mode={config.hotkey.mode})")
     typer.echo(f"Cancel: {config.hotkey.cancel_binding}")
-    typer.echo("Hold the binding to see activate/deactivate. Press Esc to cancel.")
+    if config.hotkey.mode in ("ptt", "both"):
+        hold_note = (
+            f" (hold {config.hotkey.ptt_hold_ms}ms in both mode)"
+            if config.hotkey.mode == "both"
+            else ""
+        )
+        typer.echo(f"PTT: hold binding{hold_note} — activate/deactivate events")
+    if config.hotkey.mode in ("toggle", "both"):
+        typer.echo(
+            f"Toggle: double-press within {config.hotkey.toggle_double_press_ms}ms "
+            "to start; single press while active to stop"
+        )
     typer.echo("Press Ctrl+C to exit.")
 
     if sys.platform != "win32":

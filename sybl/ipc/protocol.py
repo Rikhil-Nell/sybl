@@ -18,6 +18,9 @@ class CommandName(StrEnum):
     SET_PROVIDER_KEY = "set_provider_key"
     GET_LOGS = "get_logs"
     GET_HISTORY = "get_history"
+    LIST_SOUNDS = "list_sounds"
+    IMPORT_SOUND = "import_sound"
+    CLEAR_SOUND = "clear_sound"
     SHUTDOWN = "shutdown"
 
 

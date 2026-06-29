@@ -26,17 +26,26 @@ class CheckResult:
     name: str
     status: CheckStatus
     detail: str
+    remediation: str | None = None
 
 
 def register(app: typer.Typer) -> None:
     @app.command("doctor")
-    def doctor_command() -> None:
+    def doctor_command(
+        live: bool = typer.Option(
+            False,
+            "--live",
+            help="Run network, mic, and inject probes (slower; needs keys/mic).",
+        ),
+    ) -> None:
         """Run environment and dependency checks."""
-        results = run_checks()
+        results = run_checks(live=live)
         has_failure = False
 
         for result in results:
             typer.echo(f"[{result.status.value}] {result.name}: {result.detail}")
+            if result.remediation:
+                typer.echo(f"  -> {result.remediation}")
             if result.status == CheckStatus.FAIL:
                 has_failure = True
 
@@ -44,7 +53,7 @@ def register(app: typer.Typer) -> None:
             raise typer.Exit(code=1)
 
 
-def run_checks() -> list[CheckResult]:
+def run_checks(*, live: bool = False) -> list[CheckResult]:
     results: list[CheckResult] = []
 
     results.append(
@@ -165,7 +174,226 @@ def run_checks() -> list[CheckResult]:
     results.extend(_check_daemon())
     results.extend(_check_audio())
 
+    if live:
+        results.extend(_run_live_checks(config))
+
     return results
+
+
+async def _ping_daemon_async() -> CheckResult:
+    from sybl.ipc.client import IpcClient, is_daemon_running, load_daemon_info
+
+    if not is_daemon_running():
+        return CheckResult(
+            "Daemon IPC ping (live)",
+            CheckStatus.WARN,
+            "Daemon not running",
+            "Run: sybl start",
+        )
+    try:
+        client = IpcClient(load_daemon_info())
+        await client.ping()
+    except Exception as exc:
+        return CheckResult(
+            "Daemon IPC ping (live)",
+            CheckStatus.FAIL,
+            str(exc),
+            "Restart the daemon: sybl stop && sybl start",
+        )
+    return CheckResult(
+        "Daemon IPC ping (live)",
+        CheckStatus.PASS,
+        "pong",
+    )
+
+
+def _run_live_checks(config) -> list[CheckResult]:
+    import asyncio
+
+    results: list[CheckResult] = []
+    results.append(asyncio.run(_ping_daemon_async()))
+    if config is not None:
+        results.extend(_check_provider_reachability(config))
+        results.extend(_check_mic_smoke())
+        results.extend(_check_inject_live(config))
+    return results
+
+
+def _check_provider_reachability(config) -> list[CheckResult]:
+    import urllib.error
+    import urllib.request
+
+    results: list[CheckResult] = []
+    preferred = config.provider.preferred
+    key = get_provider_key(preferred)
+    if not key:
+        return [
+            CheckResult(
+                f"Provider reachability ({preferred})",
+                CheckStatus.WARN,
+                "No API key configured — skipping probe",
+                f"Run: sybl config set-key {preferred}",
+            )
+        ]
+
+    urls = {
+        "groq": "https://api.groq.com/openai/v1/models",
+        "deepgram": "https://api.deepgram.com/v1/projects",
+    }
+    url = urls.get(preferred)
+    if url is None:
+        return []
+
+    request = urllib.request.Request(url, method="GET")
+    if preferred == "groq":
+        request.add_header("Authorization", f"Bearer {key}")
+    elif preferred == "deepgram":
+        request.add_header("Authorization", f"Token {key}")
+
+    try:
+        with urllib.request.urlopen(request, timeout=8.0) as response:
+            if 200 <= response.status < 300:
+                status = CheckStatus.PASS
+                detail = f"HTTP {response.status}"
+                remediation = None
+            elif response.status == 401:
+                status = CheckStatus.FAIL
+                detail = "HTTP 401 unauthorized"
+                remediation = f"Run: sybl config set-key {preferred}"
+            else:
+                status = CheckStatus.WARN
+                detail = f"HTTP {response.status}"
+                remediation = None
+    except urllib.error.HTTPError as exc:
+        if exc.code == 401:
+            status = CheckStatus.FAIL
+            detail = "HTTP 401 unauthorized"
+            remediation = f"Run: sybl config set-key {preferred}"
+        else:
+            status = CheckStatus.WARN
+            detail = f"HTTP {exc.code}"
+            remediation = None
+    except Exception as exc:
+        status = CheckStatus.WARN
+        detail = f"Request failed: {exc}"
+        remediation = "Check network connectivity"
+
+    results.append(
+        CheckResult(
+            f"Provider reachability ({preferred})",
+            status,
+            detail,
+            remediation,
+        )
+    )
+    return results
+
+
+def _check_mic_smoke() -> list[CheckResult]:
+    try:
+        import numpy as np
+        import sounddevice as sd
+    except ImportError as exc:
+        return [
+            CheckResult(
+                "Mic capture smoke (live)",
+                CheckStatus.WARN,
+                str(exc),
+            )
+        ]
+
+    duration = 0.25
+    sample_rate = 16000
+    try:
+        recording = sd.rec(
+            int(duration * sample_rate),
+            samplerate=sample_rate,
+            channels=1,
+            dtype="int16",
+        )
+        sd.wait()
+        rms = float(np.sqrt(np.mean(recording.astype(np.float32) ** 2)))
+    except Exception as exc:
+        return [
+            CheckResult(
+                "Mic capture smoke (live)",
+                CheckStatus.WARN,
+                f"Could not record: {exc}",
+                "Check microphone permissions in Windows Settings",
+            )
+        ]
+
+    if rms < 1.0:
+        return [
+            CheckResult(
+                "Mic capture smoke (live)",
+                CheckStatus.WARN,
+                f"Very low signal (RMS={rms:.1f}) — silent or muted?",
+                "Speak during the probe or check default input device",
+            )
+        ]
+    return [
+        CheckResult(
+            "Mic capture smoke (live)",
+            CheckStatus.PASS,
+            f"Captured audio (RMS={rms:.1f})",
+        )
+    ]
+
+
+def _check_inject_live(config) -> list[CheckResult]:
+    import sys
+
+    if sys.platform != "win32":
+        return [
+            CheckResult(
+                "Inject self-test (live)",
+                CheckStatus.WARN,
+                "Windows-only clipboard probe skipped",
+            )
+        ]
+    if not config.inject.enabled:
+        return [
+            CheckResult(
+                "Inject self-test (live)",
+                CheckStatus.WARN,
+                "Injection disabled in config",
+                "Enable inject.enabled in config.toml",
+            )
+        ]
+    try:
+        import ctypes
+
+        user32 = ctypes.windll.user32
+        if not user32.OpenClipboard(None):
+            return [
+                CheckResult(
+                    "Inject self-test (live)",
+                    CheckStatus.WARN,
+                    "Clipboard busy — close apps holding the clipboard",
+                )
+            ]
+        try:
+            user32.EmptyClipboard()
+            user32.CloseClipboard()
+        except Exception:
+            user32.CloseClipboard()
+            raise
+    except Exception as exc:
+        return [
+            CheckResult(
+                "Inject self-test (live)",
+                CheckStatus.WARN,
+                f"Clipboard access failed: {exc}",
+            )
+        ]
+    return [
+        CheckResult(
+            "Inject self-test (live)",
+            CheckStatus.PASS,
+            "Clipboard read/write available for paste injection",
+        )
+    ]
 
 
 def _check_daemon() -> list[CheckResult]:
@@ -433,12 +661,16 @@ def _check_indicator(config) -> list[CheckResult]:
             )
         ]
 
+    sound_note = ""
+    if indicator.sound_enabled:
+        sound_note = "; sound cue enabled"
+
     if sys.platform != "win32":
         return [
             CheckResult(
                 "Capture indicator",
                 CheckStatus.WARN,
-                f"overlay strategy not implemented on {sys.platform} yet",
+                f"overlay strategy not implemented on {sys.platform} yet{sound_note}",
             )
         ]
 
@@ -461,7 +693,7 @@ def _check_indicator(config) -> list[CheckResult]:
         CheckResult(
             "Capture indicator",
             CheckStatus.PASS,
-            f"overlay enabled ({indicator.size_px}px pill near cursor)",
+            f"overlay enabled ({indicator.size_px}px pill near cursor){sound_note}",
         )
     ]
 

@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-06-28
+
+Incremental polish release: Wispr-style hotkeys, background daemon, custom sound cues,
+TUI settings, and contributor hygiene.
+
+### Added
+
+- **`both` hotkey mode (default)** — PTT (hold) and toggle (double-press) on the same
+  binding (`[hotkey] mode`, `ptt_hold_ms`, `toggle_double_press_ms`)
+- **Toggle-only mode** — `[hotkey] mode = "toggle"` for hands-free sessions
+- **Background daemon** — `sybl start` detaches by default (Windows uses `pythonw`);
+  `sybl start --foreground` for debug
+- **Custom sound cues** — `sounds/` folder beside `config.toml` (created on
+  `sybl config init`); drop or import `start.wav` / `stop.wav`; auto-trim via
+  `sound_max_seconds`; built-in chime fallback
+- **TUI sound settings** — volume, browse/import WAV, built-in vs custom per cue
+- **In-TUI hotkey settings** — binding, mode, cancel key, toggle window
+- **`sybl doctor --live`** — optional provider reachability, mic smoke, clipboard probes
+- **IPC sound commands** — `list_sounds`, `import_sound`, `clear_sound`
+- **`scripts/run_tests.py`** / **`scripts/run_tests.sh`** — hermetic CI-parity test runner
+- **Cross-platform CI grep** — flags Unix-only patterns in PR diffs
+- **AGENTS.md contribution rubric** — want/don't-want and footprint ladder
+
+### Changed
+
+- **Listening pill** — hidden until dictation starts; follows cursor while listening
+- **TUI event stream** — fixed premature disconnects; reconnects quietly
+- Dependency upper bounds (`>=floor,<next_major`) on all PyPI packages
+- Config validates hotkey binding strings at load time
+- `SYBL_CONFIG_DIR` / `SYBL_STATE_DIR` env overrides for tests and isolation
+- Default hotkey binding `ctrl+alt+space` (avoids Windows Terminal conflict)
+
+### Fixed
+
+- Toggle/`both` mode crash when `create_hotkey_manager` rejected non-PTT modes
+- Blank console window on background start (spawn via `pythonw.exe` on Windows)
+- Indicator overlay stuck visible at top-left before first session
+- TUI Settings crash when selecting built-in sound cue (Textual Select tuple order)
+
 ## [0.1.0] - 2026-06-26
 
 First public release. sybl is a BYOK voice dictation daemon with global
@@ -38,4 +77,5 @@ push-to-talk, STT provider plugins, clipboard-paste injection, and a Textual TUI
 - Integration tests requiring a microphone or live API keys are marked `@integration`
   and excluded from CI.
 
+[0.1.1]: https://github.com/Rikhil-Nell/sybl/releases/tag/v0.1.1
 [0.1.0]: https://github.com/Rikhil-Nell/sybl/releases/tag/v0.1.0

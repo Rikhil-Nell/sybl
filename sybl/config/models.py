@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class GroqConfig(BaseModel):
@@ -30,10 +30,30 @@ class ProviderConfig(BaseModel):
 class HotkeyConfig(BaseModel):
     # ctrl+shift+space conflicts with Windows Terminal (new window); alt avoids that.
     binding: str = "ctrl+alt+space"
-    mode: Literal["ptt"] = "ptt"
+    # ptt = hold only; toggle = double-press only; both = Wispr-style (default)
+    mode: Literal["ptt", "toggle", "both"] = "both"
     cancel_binding: str = "esc"
     streaming: Literal["auto", "on", "off"] = "auto"
     min_duration_ms: int = 250
+    ptt_hold_ms: int = Field(
+        default=200,
+        ge=100,
+        le=500,
+        description="Hold threshold before PTT activates in both mode",
+    )
+    toggle_double_press_ms: int = Field(default=400, ge=200, le=1000)
+
+    @field_validator("binding", "cancel_binding")
+    @classmethod
+    def validate_binding_string(cls, value: str) -> str:
+        from sybl.hotkeys.bindings import BindingParseError, parse_binding
+
+        try:
+            parse_binding(value)
+        except BindingParseError as exc:
+            msg = f"Invalid hotkey binding {value!r}: {exc}"
+            raise ValueError(msg) from exc
+        return value
 
 
 class InjectConfig(BaseModel):
@@ -91,6 +111,18 @@ class IndicatorConfig(BaseModel):
     size_px: int = 48
     offset_x: int = 16
     offset_y: int = 16
+    sound_enabled: bool = False
+    sound_on_start: bool = True
+    sound_on_stop: bool = True
+    sound_volume: float = Field(default=0.75, ge=0.0, le=1.0)
+    sound_start_file: str | None = None
+    sound_stop_file: str | None = None
+    sound_max_seconds: float = Field(
+        default=0.5,
+        gt=0.0,
+        le=2.0,
+        description="Max cue length; longer WAV files are trimmed automatically",
+    )
 
 
 class SyblConfig(BaseModel):

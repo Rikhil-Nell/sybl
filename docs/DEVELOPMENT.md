@@ -17,8 +17,7 @@ uv run sybl doctor
 
 ```powershell
 # Lint + unit tests (CI parity)
-uv run ruff check sybl tests
-uv run pytest -m "not integration" -q
+python scripts/run_tests.py
 
 # Run from source
 uv run sybl start

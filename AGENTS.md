@@ -1,7 +1,7 @@
 # AGENTS.md
 
 > Living source of truth for the sybl project. Read this first. Keep it current.
-> Last updated: 2026-06-28 (rebrand to sybl — package, CLI, PyPI, and paths)
+> Last updated: 2026-06-28 (sound cues folder, TUI sound import, cursor-following pill)
 
 ---
 
@@ -28,10 +28,11 @@ The guiding principles:
 ## 2. What sybl Does (Product Spec)
 
 - **Global activation.** A system-wide shortcut works regardless of focused app.
-- **Two interaction modes:**
+- **Two interaction modes (same binding by default):**
   - **Push-to-talk (PTT):** hold the shortcut, speak, release to finish.
   - **Toggle / constant recording:** a double-press of the shortcut starts
     continuous recording; press again to stop.
+  - Default **`both`** mode enables PTT and toggle together (Wispr-style).
 - **Popup capture surface.** When activated, a small on-screen pill appears near the
   cursor so the user knows sybl is listening (Windows tkinter overlay MVP; see
   `docs/POPUP-SPIKE.md`).
@@ -46,15 +47,19 @@ The guiding principles:
 
 > Update this section every time the project's reality changes.
 
-- **Phase:** Phase 10 complete — v0.1.0 public release on GitHub and PyPI; contributor
-  docs, CI (Windows + Ubuntu), issue/PR templates, and user docs hub shipped.
+- **Phase:** v0.1.1 ready to ship — both/toggle hotkey modes, background `sybl start`,
+  custom sound cues (`sounds/` + TUI import), cursor-following indicator pill,
+  `sybl doctor --live`, Hermes-shaped contributor hygiene, TUI IPC stability.
+- **Next releases:** **v0.1.2** — heavy TUI overhaul (modal UX, live meter, instant
+  attach, design system). **v0.2.0** — new providers, macOS/Linux backends, native
+  helpers. See `docs/ROADMAP.md`.
 - **Code:** `sybl/audio/` implements `AudioCaptureSession` (sounddevice callback →
   asyncio queue, 16 kHz mono int16, resampling, dBFS peak metering, debug WAV save).
   `sybl/providers/` implements streaming-first STT interface, `ProviderCapabilities`,
   `resolve_provider` session-start selection, `GroqProvider` (batch), and
   `DeepgramProvider` (WebSocket streaming + REST batch via official SDK).
-  `sybl/hotkeys/` implements `HotkeyManager`, binding parser, Windows `pynput` PTT
-  backend, and focus capture at activation. `sybl/inject/` implements `TextInjector`,
+  `sybl/hotkeys/` implements `HotkeyManager`, binding parser, Windows `pynput` PTT,
+  toggle, and **`both`** (Wispr-style) backends, and focus capture at activation. `sybl/inject/` implements `TextInjector`,
   Windows clipboard-paste injection with focus restore and clipboard restoration.
   `sybl/core/` has `StateMachine`, `DictationController`, `SyblDaemon`, post-processing,
   voice commands, `TranscriptHistory`, `EventBus`, and transcribe pipeline.
@@ -64,6 +69,7 @@ The guiding principles:
   `CaptureIndicator` (NoOp + Windows tkinter overlay near cursor with RMS level bar).
   CLI: `sybl start`, `sybl stop`, `sybl status`, `sybl tui`, `sybl config`,
   `sybl config vocab`, `sybl doctor`, `sybl audio`, `sybl transcribe`, `sybl hotkey test`.
+  `sybl start` detaches by default; `--foreground` blocks for debug.
 - **Stack pinned:** `typer`, `pydantic`, `platformdirs`, `keyring`, `tomli-w`,
   `sounddevice`, `numpy`, `soundfile`, `soxr`, `groq`, `tenacity`, `deepgram-sdk`,
   `pynput`, `textual`; dev: `ruff`, `pytest`, `pytest-asyncio`.
@@ -114,6 +120,12 @@ The guiding principles:
 | Phase 9 voice commands | **Final-transcript parsing** — `new line`, `period`, `comma` | No streaming/wake-word; Esc cancels before STT/inject; no scratch-that erase. |
 | Phase 10 OSS | **MIT license**, PyPI + `pipx`/`uv tool` primary install, GitHub issue/PR templates, CI on Windows+Ubuntu | Hermes-style contributor surface without a separate docs site; `docs/` hub + README landing page. |
 | Phase 10 PyPI | **`release.yml`** on GitHub Release → `uv build` → PyPI trusted publishing (OIDC) | No long-lived PyPI token in repo; maintainers configure pending publisher on PyPI. |
+| v0.1.1 hygiene | **`scripts/run_tests.py`**, dep `<next_major` caps, unixisms CI, AGENTS rubric | Hermes-shaped contributor surface; hermetic tests via `SYBL_CONFIG_DIR` / `SYBL_STATE_DIR`. |
+| v0.1.1 toggle | **`HotkeyConfig.mode` `toggle`** — double-press chord to start, single press to stop | Same `HotkeyEvent` semantics for dictation core. |
+| v0.1.1 both mode | **`HotkeyConfig.mode` `both` (default)** — hold = PTT after `ptt_hold_ms`; double-press = toggle on same binding | Wispr-style; `ptt`/`toggle` remain for single-mode users. |
+| v0.1.1 background | **`sybl start` detached by default** — `sybl/daemon/spawn.py`; `--foreground` for debug | TUI is the primary log surface; file log always on. systemd/launchd wrap same command. |
+| v0.1.1 indicator chime | **Custom WAV cues** in `{config_dir}/sounds/` with auto-trim (`sound_max_seconds`); built-in chime fallback | Cross-platform via `sounddevice`; no per-OS sound APIs. |
+| v0.1.1 secrets docs | Keyring threat model in `docs/permissions.md`; **`sybl doctor --live`** for probes | Live checks opt-in; static doctor stays CI-safe. |
 | Rebrand | **sybl** everywhere — Python package `sybl/`, CLI **`sybl`**, PyPI **`sybl`**, app id `sybl` | Prior names `navi` and `sybil`/`sybil-dictation` were taken or conflicted on PyPI; `sybl` is the canonical name. |
 
 High-level component map:
@@ -172,6 +184,7 @@ sybl/
 │   ├── POPUP-SPIKE.md
 │   ├── ROADMAP.md
 │   └── RESEARCH-NOTES.md
+├── scripts/               # run_tests.py, check_unixisms.py
 ├── main.py                # legacy redirect to CLI
 ├── pyproject.toml
 ├── tests/
@@ -187,6 +200,7 @@ sybl/
 │   ├── test_history.py
 │   ├── test_hotkeys.py
 │   ├── test_indicator.py
+│   ├── test_indicator_sound.py
 │   ├── test_inject.py
 │   ├── test_ipc_protocol.py
 │   ├── test_ipc_server.py
@@ -198,6 +212,7 @@ sybl/
 │   ├── test_single_instance.py
 │   ├── test_transcribe.py
 │   ├── test_tui_client.py
+│   ├── test_tui_settings.py
 │   ├── test_vocabulary.py
 │   ├── test_voice_commands.py
 │   └── test_provider_vocabulary.py
@@ -215,6 +230,7 @@ sybl/
     ├── hotkeys/           # HotkeyManager, bindings, pynput backend, focus capture
     ├── inject/            # TextInjector, Windows clipboard-paste injection
     ├── indicator/         # CaptureIndicator, NoOp, Windows tkinter overlay
+    ├── daemon/            # Background spawn helpers
     └── tui/               # Textual client (dashboard, settings, onboarding)
 ```
 
@@ -229,6 +245,42 @@ sybl/
   **Windows is the primary target** for the core loop first. Always isolate
   platform-specific code (hotkeys, injection, popup) behind interfaces so other
   platforms slot in later without touching the core.
+
+## 8. Contribution rubric
+
+Adapted from hermes-agent. Use when reviewing PRs or planning work.
+
+### What we want
+
+- **Fix real bugs** with reproduction on current `main` and line-level account of the fix.
+- **Expand at the edges** — new STT providers, platform adapters (hotkeys, inject,
+  indicator), TUI improvements — behind existing interfaces, not by growing the
+  daemon core loop.
+- **Daemon authority preserved** — TUI/CLI observe and command over IPC; config and
+  keys flow through the daemon.
+- **Behavior-contract tests** — assert invariants, not snapshot literals.
+- **Cross-platform discipline** — fix portable first; gate only when OS-bound.
+
+### What we don't want
+
+- **Secrets in config files** — keyring only for API keys.
+- **Unbounded PyPI deps** — use `>=floor,<next_major`.
+- **Post-STT vocabulary replacement** — STT hints only (`sybl config vocab` terms).
+- **TUI owning state** — no config drift between TUI and daemon.
+- **Speculative abstractions** with no consumer.
+
+### Footprint ladder (new capability)
+
+1. Extend existing code
+2. CLI command + docs
+3. Gated optional module (loads when configured)
+4. Provider/platform adapter behind interface
+5. Core loop change (last resort)
+
+### Verify premise before fixing
+
+Read intent in git history and existing design. A limitation may be deliberate isolation,
+not a gap.
 
 ## 7. Self-Maintenance Protocol (READ THIS, AGENT)
 

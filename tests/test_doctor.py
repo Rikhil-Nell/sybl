@@ -44,3 +44,24 @@ def test_run_checks_warns_when_preferred_key_missing(tmp_path: Path) -> None:
         result for result in results if result.name == "Preferred provider key"
     )
     assert key_result.status == CheckStatus.WARN
+
+
+def test_run_checks_live_includes_live_section() -> None:
+    from sybl.cli.doctor import CheckResult
+
+    live_result = CheckResult(
+        "Daemon IPC ping (live)",
+        CheckStatus.PASS,
+        "pong",
+    )
+    with patch(
+        "sybl.cli.doctor._run_live_checks",
+        return_value=[live_result],
+    ):
+        results = run_checks(live=True)
+    assert any(result.name == "Daemon IPC ping (live)" for result in results)
+
+
+def test_static_checks_exclude_live_probes_by_default() -> None:
+    results = run_checks(live=False)
+    assert not any("live" in result.name.lower() for result in results)

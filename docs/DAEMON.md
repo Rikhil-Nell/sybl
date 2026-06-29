@@ -1,7 +1,11 @@
 # sybl daemon — background service notes
 
-sybl runs as a **foreground daemon** for now: `sybl start` blocks in the terminal,
-listens for hotkeys, and serves IPC on localhost.
+sybl runs as a **background process** by default: `sybl start` spawns a detached
+daemon, writes logs to the log file, and returns your terminal immediately.
+
+Use **`sybl tui`** for live logs, history, and settings. Use **`sybl stop`** to shut
+down. Use **`sybl start --foreground`** when debugging (blocks the terminal, prints
+logs to stderr).
 
 ## IPC
 
@@ -13,7 +17,10 @@ listens for hotkeys, and serves IPC on localhost.
 Clients: `sybl tui`, `sybl status`, `sybl stop`, and `sybl config set-key` (when
 daemon is running).
 
-## Optional auto-start (not implemented)
+## Optional auto-start (system service)
+
+`sybl start` already detaches on all platforms (Windows, Linux, macOS). For login
+auto-start, point your service manager at the same command.
 
 ### Linux (systemd user unit)
 
@@ -33,13 +40,15 @@ WantedBy=default.target
 
 Then: `systemctl --user enable --now sybl.service`
 
+Use `sybl stop` / `sybl start` for manual control; the unit wraps the same background
+spawn.
+
 ### macOS (launchd)
 
-Use a `LaunchAgent` plist pointing at your `sybl start` wrapper.
+Use a `LaunchAgent` plist with `ProgramArguments` set to your `sybl` binary and
+`start` (no `--foreground`).
 
 ### Windows
 
-Use Task Scheduler to run `sybl start` at logon, or a third-party service wrapper.
-
-Background/detached mode may be added in a future release; MVP expects a visible
-terminal or service manager.
+`sybl start` already uses a detached process (no console window). For logon
+auto-start, use Task Scheduler with action `sybl start`.

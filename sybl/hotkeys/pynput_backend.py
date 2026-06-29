@@ -1,9 +1,11 @@
-"""Windows global hotkey backend using pynput."""
+"""Pynput hotkey backend — PTT, toggle, or both on the same binding."""
 
 from __future__ import annotations
 
 import asyncio
 import logging
+import threading
+import time
 from typing import Any
 
 from pynput import keyboard
@@ -55,7 +57,7 @@ _SPECIAL_KEY_MAP: dict[str, keyboard.Key] = {
 
 
 class PynputHotkeyManager:
-    """Push-to-talk hotkeys via pynput keyboard listener."""
+    """Global hotkeys: hold-to-talk, double-press toggle, or both (Wispr-style)."""
 
     def __init__(self, config: HotkeyConfig) -> None:
         self._config = config
@@ -68,6 +70,12 @@ class PynputHotkeyManager:
         self._listener: keyboard.Listener | None = None
         self._pressed: set[str] = set()
         self._active = False
+        self._ptt_session = False
+        self._toggle_session = False
+        self._binding_matched = False
+        self._last_toggle_complete: float = 0.0
+        self._ptt_timer: threading.Timer | None = None
+        self._ptt_armed = False
 
     async def start(self, handler: HotkeyHandler) -> None:
         if self._listener is not None:
@@ -84,12 +92,14 @@ class PynputHotkeyManager:
         )
         self._listener.start()
         logger.info(
-            "Hotkey listener started (binding=%s, cancel=%s)",
+            "Hotkey listener started (mode=%s, binding=%s, cancel=%s)",
+            self._config.mode,
             self._config.binding,
             self._config.cancel_binding,
         )
 
     async def stop(self) -> None:
+        self._cancel_ptt_timer()
         if self._listener is not None:
             self._listener.stop()
             self._listener = None
@@ -112,8 +122,16 @@ class PynputHotkeyManager:
 
         self._handler = None
         self._pressed.clear()
-        self._active = False
+        self._reset_session_state()
         logger.info("Hotkey listener stopped")
+
+    def _reset_session_state(self) -> None:
+        self._active = False
+        self._ptt_session = False
+        self._toggle_session = False
+        self._binding_matched = False
+        self._last_toggle_complete = 0.0
+        self._ptt_armed = False
 
     async def _consume(self) -> None:
         assert self._queue is not None
@@ -133,6 +151,61 @@ class PynputHotkeyManager:
             return
         self._loop.call_soon_threadsafe(self._queue.put_nowait, event)
 
+    def _binding_is_matched(self) -> bool:
+        return self._binding.token_set.issubset(self._pressed)
+
+    def _toggle_enabled(self) -> bool:
+        return self._config.mode in ("toggle", "both")
+
+    def _ptt_enabled(self) -> bool:
+        return self._config.mode in ("ptt", "both")
+
+    def _cancel_ptt_timer(self) -> None:
+        if self._ptt_timer is not None:
+            self._ptt_timer.cancel()
+            self._ptt_timer = None
+        self._ptt_armed = False
+
+    def _schedule_ptt(self) -> None:
+        if not self._ptt_enabled() or self._active:
+            return
+        self._cancel_ptt_timer()
+        hold_seconds = self._config.ptt_hold_ms / 1000.0
+        timer = threading.Timer(hold_seconds, self._ptt_timer_fired)
+        timer.daemon = True
+        self._ptt_timer = timer
+        self._ptt_armed = True
+        timer.start()
+
+    def _ptt_timer_fired(self) -> None:
+        self._ptt_timer = None
+        self._ptt_armed = False
+        if self._active or not self._binding_is_matched():
+            return
+        self._activate_ptt()
+
+    def _activate_ptt(self) -> None:
+        self._active = True
+        self._ptt_session = True
+        self._toggle_session = False
+        self._last_toggle_complete = 0.0
+        self._emit(HotkeyEvent.ACTIVATE)
+
+    def _activate_toggle(self) -> None:
+        self._active = True
+        self._toggle_session = True
+        self._ptt_session = False
+        self._last_toggle_complete = 0.0
+        self._emit(HotkeyEvent.ACTIVATE)
+
+    def _deactivate(self) -> None:
+        self._cancel_ptt_timer()
+        self._active = False
+        self._ptt_session = False
+        self._toggle_session = False
+        self._last_toggle_complete = 0.0
+        self._emit(HotkeyEvent.DEACTIVATE)
+
     def _on_press(self, key: keyboard.Key | keyboard.KeyCode) -> None:
         semantic = _semantic_key(key)
         if semantic is None:
@@ -144,9 +217,12 @@ class PynputHotkeyManager:
             self._emit(HotkeyEvent.CANCEL)
             return
 
-        if not self._active and self._binding.token_set.issubset(self._pressed):
-            self._active = True
-            self._emit(HotkeyEvent.ACTIVATE)
+        matched = self._binding_is_matched()
+        if matched and not self._binding_matched:
+            self._binding_matched = True
+            self._on_binding_complete()
+        elif not matched:
+            self._binding_matched = False
 
     def _on_release(self, key: keyboard.Key | keyboard.KeyCode) -> None:
         semantic = _semantic_key(key)
@@ -156,9 +232,42 @@ class PynputHotkeyManager:
         if semantic in self._pressed:
             self._pressed.remove(semantic)
 
-        if self._active and semantic in self._binding.token_set:
-            self._active = False
-            self._emit(HotkeyEvent.DEACTIVATE)
+        if self._ptt_armed and not self._ptt_session:
+            self._cancel_ptt_timer()
+
+        matched = self._binding_is_matched()
+        if not matched:
+            self._binding_matched = False
+
+        if (
+            self._ptt_session
+            and self._ptt_enabled()
+            and semantic in self._binding.token_set
+        ):
+            self._deactivate()
+
+    def _on_binding_complete(self) -> None:
+        if self._active:
+            if self._toggle_session:
+                self._deactivate()
+            return
+
+        if self._toggle_enabled():
+            now = time.monotonic()
+            window = self._config.toggle_double_press_ms / 1000.0
+            if (
+                self._last_toggle_complete > 0.0
+                and (now - self._last_toggle_complete) <= window
+            ):
+                self._cancel_ptt_timer()
+                self._activate_toggle()
+                return
+            self._last_toggle_complete = now
+
+        if self._config.mode == "ptt":
+            self._activate_ptt()
+        elif self._config.mode == "both":
+            self._schedule_ptt()
 
 
 def _semantic_key(key: keyboard.Key | keyboard.KeyCode) -> str | None:
