@@ -39,6 +39,36 @@ def test_config_init_and_show(tmp_path: Path) -> None:
         assert "groq" in show_result.stdout
 
 
+def test_config_edit_writes_and_opens() -> None:
+    opened: dict[str, Path] = {}
+
+    def fake_open(path: Path) -> None:
+        opened["path"] = path
+
+    with (
+        patch("sybl.cli.config_cmd.open_in_editor", side_effect=fake_open),
+        patch("sybl.cli.config_cmd.is_daemon_running", return_value=False),
+    ):
+        result = runner.invoke(app, ["config", "edit"])
+
+    assert result.exit_code == 0
+    assert opened["path"].exists()
+    assert "Saved" in result.stdout
+
+
+def test_resolve_editor_command_honors_editor(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    from sybl.config.edit import resolve_editor_command
+
+    monkeypatch.setenv("EDITOR", "myedit --wait")
+    monkeypatch.delenv("VISUAL", raising=False)
+    command = resolve_editor_command(tmp_path / "config.toml")
+    assert command[:2] == ["myedit", "--wait"]
+    assert command[-1].endswith("config.toml")
+
+
 def test_doctor_runs() -> None:
     result = runner.invoke(app, ["doctor"])
     assert result.exit_code in (0, 1)

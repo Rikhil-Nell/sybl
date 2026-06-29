@@ -1,7 +1,7 @@
 # AGENTS.md
 
 > Living source of truth for the sybl project. Read this first. Keep it current.
-> Last updated: 2026-06-28 (sound cues folder, TUI sound import, cursor-following pill)
+> Last updated: 2026-06-29 (v0.1.2 settings editor rework; `sybl config edit` + `e` binding)
 
 ---
 
@@ -47,11 +47,18 @@ The guiding principles:
 
 > Update this section every time the project's reality changes.
 
-- **Phase:** v0.1.1 ready to ship — both/toggle hotkey modes, background `sybl start`,
-  custom sound cues (`sounds/` + TUI import), cursor-following indicator pill,
-  `sybl doctor --live`, Hermes-shaped contributor hygiene, TUI IPC stability.
-- **Next releases:** **v0.1.2** — heavy TUI overhaul (modal UX, live meter, instant
-  attach, design system). **v0.2.0** — new providers, macOS/Linux backends, native
+- **Phase:** v0.1.2 mission-control TUI shipped — Sibyl Royal theme, zone
+ dashboard (chrome → context → **hero status band** → session-detail | transcripts
+ over logs → **live band** → footer). Hero band is the anchor: state dot+name,
+ block-glyph RMS meter (driven by IPC `level`), label + hint. Session pane is a
+ PIPELINE / PROVIDER / HOTKEY / TODAY detail column. Live band echoes the
+ streaming partial while active and the last injected text when idle. Settings
+ is a sidebar **config editor** — narrow section rail + per-section heading,
+ description, labeled forms, and sized sound-cue rows. Config file can be opened
+ in `$EDITOR` from the dashboard (`e`) or `sybl config edit`; both reload the
+ running daemon. Help overlay. v0.1.1 core loop unchanged.
+- **Next releases:** **v0.1.2 polish** — onboarding wizard, log level filter,
+  README screenshots. **v0.2.0** — new providers, macOS/Linux backends, native
   helpers. See `docs/ROADMAP.md`.
 - **Code:** `sybl/audio/` implements `AudioCaptureSession` (sounddevice callback →
   asyncio queue, 16 kHz mono int16, resampling, dBFS peak metering, debug WAV save).
@@ -64,11 +71,15 @@ The guiding principles:
   `sybl/core/` has `StateMachine`, `DictationController`, `SyblDaemon`, post-processing,
   voice commands, `TranscriptHistory`, `EventBus`, and transcribe pipeline.
   `sybl/config/vocabulary.py` stores STT hint terms. `sybl/ipc/` implements
-  NDJSON command/event TCP servers and client. `sybl/tui/` is a Textual app (logs,
-  status, history, settings, BYOK onboarding). `sybl/indicator/` implements
+  NDJSON command/event TCP servers and client.  `sybl/tui/` is a Textual app (Sibyl Royal theme;
+ zone widgets `ChromeBar`/`ContextStrip`/`HeroBand`/`SessionPane`/`TranscriptList`/`LogBand`/`LiveBand`/`KeyFooter`;
+ sidebar settings config-editor modal, help overlay, BYOK onboarding). `sybl/config/edit.py`
+ resolves `$VISUAL`/`$EDITOR` (per-OS fallback) and opens the config file. `sybl/indicator/` implements
   `CaptureIndicator` (NoOp + Windows tkinter overlay near cursor with RMS level bar).
-  CLI: `sybl start`, `sybl stop`, `sybl status`, `sybl tui`, `sybl config`,
-  `sybl config vocab`, `sybl doctor`, `sybl audio`, `sybl transcribe`, `sybl hotkey test`.
+  CLI: `sybl start`, `sybl stop`, `sybl status`, `sybl tui` (`--demo` runs the
+ dashboard with scripted sample data, no daemon — for screenshots/previews), `sybl config`
+ (incl. `config edit` to open + reload), `sybl config vocab`, `sybl doctor`, `sybl audio`,
+ `sybl transcribe`, `sybl hotkey test`.
   `sybl start` detaches by default; `--foreground` blocks for debug.
 - **Stack pinned:** `typer`, `pydantic`, `platformdirs`, `keyring`, `tomli-w`,
   `sounddevice`, `numpy`, `soundfile`, `soxr`, `groq`, `tenacity`, `deepgram-sdk`,
@@ -126,6 +137,11 @@ The guiding principles:
 | v0.1.1 background | **`sybl start` detached by default** — `sybl/daemon/spawn.py`; `--foreground` for debug | TUI is the primary log surface; file log always on. systemd/launchd wrap same command. |
 | v0.1.1 indicator chime | **Custom WAV cues** in `{config_dir}/sounds/` with auto-trim (`sound_max_seconds`); built-in chime fallback | Cross-platform via `sounddevice`; no per-OS sound APIs. |
 | v0.1.1 secrets docs | Keyring threat model in `docs/permissions.md`; **`sybl doctor --live`** for probes | Live checks opt-in; static doctor stays CI-safe. |
+| v0.1.2 TUI | **Sibyl Royal** theme (`sybl/tui/theme/sibyl_royal.tcss`); zone widgets (`ChromeBar`, `ContextStrip`, `SessionPane`, `TranscriptList`, `LogBand`, `KeyFooter`); settings sidebar modal; IPC `level` → session meter | Thin-client unchanged; Lavish mock layout; help on `?`; Textual pilot tests. |
+| v0.1.2 mission-control | Added full-width **`HeroBand`** (state dot+name, block-glyph RMS meter, label, hint) as the dashboard anchor + **`LiveBand`** (streaming partial / last-injected ticker); `SessionPane` reworked into PIPELINE/PROVIDER/HOTKEY/TODAY detail; right column stacks transcripts over logs; IPC `level` now drives `HeroBand.update_meter` | Faithful Textual port of the Lavish mission-control mock; gives the TUI its own identity (Factory/Hermes-style branding) instead of a default-template feel. Box-model note: single-row bars and `padding-top` labels need height that clears the padding or content collapses. |
+| v0.1.2 settings | Settings modal rebuilt as a **config editor**: fixed-width section rail (the old CSS targeted a non-existent `#settings-nav`, so the list grabbed half the modal), per-section heading + description, labeled forms, and one-line sound-cue rows (wide select + compact buttons) | Fixes the "haphazard / oversized sidebar" UI; reads as a real form, not a default template. |
+| v0.1.2 config edit | **`sybl config edit`** + dashboard **`e`** open the config file in `$VISUAL`/`$EDITOR` (`sybl/config/edit.py`), then push the reloaded file to the running daemon via `PATCH_CONFIG` (full dump) | Lets power users hand-edit TOML without leaving the workflow; daemon stays the source of truth (no drift), reusing the existing patch/deep-merge path. |
+| v0.1.2 CLI audit | **No commands deprecated.** CLI = scriptable/headless/diagnostic surface (`audio`, `transcribe`, `hotkey test`, `doctor`, `config show/keys`); TUI = interactive surface. They are complementary, not redundant | Per the footprint ladder, added one CLI command (`config edit`) rather than growing the core; kept diagnostics that the TUI does not replace. |
 | Rebrand | **sybl** everywhere — Python package `sybl/`, CLI **`sybl`**, PyPI **`sybl`**, app id `sybl` | Prior names `navi` and `sybil`/`sybil-dictation` were taken or conflicted on PyPI; `sybl` is the canonical name. |
 
 High-level component map:
@@ -183,6 +199,7 @@ sybl/
 │   ├── DAEMON.md
 │   ├── POPUP-SPIKE.md
 │   ├── ROADMAP.md
+│   ├── DESIGN-v0.1.2.md
 │   └── RESEARCH-NOTES.md
 ├── scripts/               # run_tests.py, check_unixisms.py
 ├── main.py                # legacy redirect to CLI
@@ -212,6 +229,7 @@ sybl/
 │   ├── test_single_instance.py
 │   ├── test_transcribe.py
 │   ├── test_tui_client.py
+│   ├── test_tui_dashboard.py
 │   ├── test_tui_settings.py
 │   ├── test_vocabulary.py
 │   ├── test_voice_commands.py
@@ -220,7 +238,7 @@ sybl/
     ├── __init__.py
     ├── __main__.py
     ├── cli/               # start, stop, status, tui, config, doctor, audio, transcribe, hotkey
-    ├── config/            # Pydantic models, paths, ConfigManager, vocabulary store
+    ├── config/            # Pydantic models, paths, ConfigManager, vocabulary store, editor open
     ├── secrets/           # keyring wrapper
     ├── logging/           # setup + RingBufferHandler
     ├── ipc/               # NDJSON command/event servers + client
@@ -231,7 +249,11 @@ sybl/
     ├── inject/            # TextInjector, Windows clipboard-paste injection
     ├── indicator/         # CaptureIndicator, NoOp, Windows tkinter overlay
     ├── daemon/            # Background spawn helpers
-    └── tui/               # Textual client (dashboard, settings, onboarding)
+    └── tui/               # Textual client (theme, widgets, dashboard, settings, help, onboarding)
+        ├── theme/         # sibyl_royal.tcss
+        ├── widgets/       # ChromeBar, ContextStrip, HeroBand, SessionPane, TranscriptList, LogBand, LiveBand, KeyFooter
+        ├── screens/       # dashboard, settings, help, onboarding
+        └── demo.py        # DemoIpcClient — scripted in-process IPC for `tui --demo`
 ```
 
 ## 6. Conventions
@@ -241,6 +263,14 @@ sybl/
   audio/STT pipeline non-blocking.
 - **Comments:** explain *why*, not *what*. No narration comments.
 - **Secrets:** never commit API keys; never log them. Use the keyring.
+- **No Cursor co-author attribution:** never add `Co-authored-by: Cursor` (or any
+  Cursor/agent co-author trailer) to commits, PR descriptions, release notes, or
+  tags. sybl is a public OSS competitor — git history must show only human authors.
+  The optional `.githooks/commit-msg` hook rejects this trailer; agents must not
+  bypass it. If the IDE re-injects the trailer on `git commit`, rewrite with
+  `git commit-tree` + `git reset --hard` instead of `git commit --amend`.
+- **No competitor names in commits:** do not name rival products (e.g. Wispr Flow)
+  in commit messages, tags, or release notes — describe sybl behavior on its own terms.
 - **Cross-platform:** Windows, macOS, and Linux are all in scope long-term, but
   **Windows is the primary target** for the core loop first. Always isolate
   platform-specific code (hotkeys, injection, popup) behind interfaces so other

@@ -309,51 +309,56 @@ non-blocking attach, modal overlays, one backend / thin client.**
 
 ### Architecture (before pixels)
 
-- [ ] **Thin-client contract** — document and enforce: TUI never owns config,
+- [x] **Thin-client contract** — document and enforce: TUI never owns config,
       keys, or state; all writes go through daemon IPC; widgets are pure views.
-- [ ] **Event-driven refresh** — replace polling-heavy paths with IPC event
+- [x] **Event-driven refresh** — replace polling-heavy paths with IPC event
       subscriptions where possible (state, level, history append, log tail).
-- [ ] **Instant attach** — dashboard shell renders on first frame; data fills in
+- [x] **Instant attach** — dashboard shell renders on first frame; data fills in
       progressively (status → logs → history) so `sybl tui` never feels frozen.
 - [ ] **Central UI action registry** — one map of keybindings / slash-style
       commands shared by dashboard, settings modals, and onboarding (no drift).
 
 ### Layout & navigation
 
-- [ ] **Dashboard redesign** — clear visual hierarchy: status hero, live meter,
-      logs + history with resizable or tabbed panes; consistent header/footer.
-- [ ] **Modal overlays** — settings, provider/key setup, vocab edit as stacked
-      modals (not full-screen screen swaps); Esc dismisses without losing context.
+- [x] **Dashboard redesign** — Sibyl Royal zone layout: chrome → context →
+      session|transcripts → logs → footer (see `docs/DESIGN-v0.1.2.md`).
+- [x] **Modal overlays** — settings and help as stacked modals; Esc dismisses
+      without losing dashboard context.
+- [x] **Settings config-editor** — sidebar section rail + per-section heading,
+      description, labeled forms, and sized sound-cue rows (no more haphazard
+      layout / oversized sidebar).
+- [x] **Raw config edit** — open `config.toml` in `$EDITOR` from the dashboard
+      (`e`) or `sybl config edit`; both reload the running daemon.
 - [ ] **Onboarding wizard** — step-by-step BYOK flow (provider → key → test
       mic → first dictation) with progress indicator; skippable on return visits.
-- [ ] **History UX** — search/filter, expanded preview, copy/export selected
-      entry, keyboard navigation audit (↑/↓/Enter/copy).
+- [x] **History UX** — client-side filter, selectable rows, `y` copy; keyboard
+      navigation via ListView (↑/↓).
 - [ ] **Log UX** — level filter (INFO/WARN/ERROR), auto-scroll toggle, dim
       timestamps; optional source/component tags if daemon emits them.
 
 ### Live feedback
 
-- [ ] **In-TUI mic meter** — RMS level bar (and optional sparkline) while daemon
-      is in `LISTENING`; mirrors indicator pill data from IPC events.
-- [ ] **State machine visibility** — idle / listening / processing / injecting
+- [x] **In-TUI mic meter** — RMS level bar while daemon is in `LISTENING`;
+      driven by IPC `level` events.
+- [x] **State machine visibility** — idle / listening / processing / injecting
       shown prominently with provider name and session timing.
-- [ ] **Connection health** — daemon attach/reconnect indicator; graceful
+- [x] **Connection health** — daemon attach/reconnect indicator; graceful
       offline mode when IPC drops (retry banner, read-only history).
 
 ### Polish
 
-- [ ] **Textual design system** — shared CSS tokens (panels, borders, accent,
-      status colors); dark-first; readable on Windows Terminal + common Linux terms.
-- [ ] **Notification toasts** — config saved, key stored, copy succeeded, inject
+- [x] **Textual design system** — `sybl/tui/theme/sibyl_royal.tcss` (panels,
+      borders, accent, status colors); dark-first Sibyl Royal palette.
+- [x] **Notification toasts** — config saved, key stored, copy succeeded, inject
       errors — non-blocking, consistent placement.
-- [ ] **Help overlay** — `?` shows keybindings and quick commands in a modal.
+- [x] **Help overlay** — `?` shows keybindings and quick commands in a modal.
 - [ ] **Screenshot / docs figures** — update README and getting-started with the
       new TUI layout.
 
 ### Testing
 
-- [ ] **TUI widget tests** — Textual pilot tests for onboarding flow, settings
-      modal save → IPC mock, history selection/copy.
+- [x] **TUI widget tests** — Textual pilot tests for dashboard zones, settings
+      modal save → IPC mock, section nav, hotkey validation.
 - [ ] **IPC integration tests** — event stream drives widget updates without a
       live daemon where feasible.
 

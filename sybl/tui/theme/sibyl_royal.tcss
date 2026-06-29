@@ -1,0 +1,515 @@
+/* Sibyl Royal — flat regal blue + gold, no gradients.
+   Palette (mirrors docs/DESIGN-v0.1.2.md + the mission-control mock):
+     bg-base #080e1a  bg-panel #0c1633  bg-panel-2 #102040  row-sel #15264a
+     border #1e3a6e   border-dim #152a52
+     text #e8e4d9  text-dim #9aa6c0  muted #6b7a99
+     gold #b8860b  gold-br #d8b43a  blue #5a8fc4  green #5fae7f  red #c94a4a
+   NOTE: a Textual border consumes a whole cell row, so single-row bars must
+   NOT carry a border — zone separation comes from background shade instead. */
+
+Screen {
+    background: #080e1a;
+}
+
+#dashboard-main {
+    height: 1fr;
+}
+
+/* ── Chrome ── */
+ChromeBar {
+    height: 1;
+    background: #0c1633;
+    padding: 0 2;
+}
+
+#chrome-logo {
+    width: auto;
+    color: #b8860b;
+    text-style: bold;
+    padding: 0 1 0 0;
+}
+
+#chrome-brand {
+    width: auto;
+    color: #d8b43a;
+    text-style: bold;
+    padding: 0 2 0 0;
+}
+
+#daemon-chip {
+    width: auto;
+    padding: 0 1;
+}
+
+#daemon-chip.live {
+    color: #5a8fc4;
+}
+
+#daemon-chip.offline {
+    color: #c94a4a;
+}
+
+#state-chip {
+    width: auto;
+    padding: 0 1;
+    color: #6b7a99;
+}
+
+#state-chip.listening {
+    color: #d8b43a;
+}
+
+#state-chip.processing,
+#state-chip.injecting {
+    color: #5a8fc4;
+}
+
+#chrome-meta {
+    width: 1fr;
+    text-align: right;
+    color: #6b7a99;
+}
+
+/* ── Context strip ── */
+ContextStrip {
+    height: 1;
+    background: #102040;
+    color: #6b7a99;
+    padding: 0 2;
+}
+
+ContextStrip.disconnected {
+    color: #c94a4a;
+}
+
+/* ── Hero status band ── */
+HeroBand {
+    height: 4;
+    background: #080e1a;
+    padding: 0 2;
+    align: left middle;
+}
+
+#hero-state {
+    width: auto;
+    min-width: 16;
+    height: 2;
+    content-align: left middle;
+    text-style: bold;
+    color: #e8e4d9;
+    padding: 0 2 0 0;
+}
+
+HeroBand.listening #hero-state {
+    color: #d8b43a;
+}
+
+HeroBand.processing #hero-state,
+HeroBand.injecting #hero-state {
+    color: #5a8fc4;
+}
+
+HeroBand.offline #hero-state {
+    color: #c94a4a;
+}
+
+#hero-meter-wrap {
+    width: 1fr;
+    height: 2;
+}
+
+#hero-meter {
+    height: 1;
+}
+
+#hero-meter-label {
+    height: 1;
+    color: #6b7a99;
+}
+
+#hero-hint {
+    width: auto;
+    height: 2;
+    content-align: right middle;
+    color: #9aa6c0;
+}
+
+/* ── Main two-column area ── */
+#dashboard-panes {
+    height: 1fr;
+}
+
+/* Left: session detail */
+SessionPane {
+    width: 1fr;
+    height: 1fr;
+    background: #080e1a;
+    border-right: solid #152a52;
+}
+
+SessionPane .panel-header {
+    height: 1;
+    padding: 0 2;
+    background: #0c1633;
+    color: #d8b43a;
+    text-style: bold;
+}
+
+#session-body {
+    height: 1fr;
+    padding: 1 2 0 2;
+    scrollbar-background: #080e1a;
+    scrollbar-color: #1e3a6e;
+}
+
+/* height must clear the top padding row, or the single content row collapses
+   and the label renders invisible. The 1-row top padding doubles as the gap
+   between sections so they breathe without overflowing the column. */
+.section-title {
+    height: 2;
+    color: #d8b43a;
+    text-style: bold;
+    padding: 1 0 0 0;
+}
+
+#session-body .section-title-first {
+    height: 1;
+    padding: 0 0 0 0;
+}
+
+#session-pipeline,
+#session-provider,
+#session-hotkey,
+#session-today {
+    height: auto;
+    padding: 0 0 0 1;
+}
+
+/* Right: transcripts over logs */
+#right-column {
+    width: 1fr;
+    height: 1fr;
+}
+
+TranscriptList {
+    height: 1fr;
+    background: #080e1a;
+}
+
+TranscriptList .panel-header {
+    height: 1;
+    padding: 0 1;
+    background: #0c1633;
+    color: #d8b43a;
+    text-style: bold;
+}
+
+#transcript-filter {
+    height: 3;
+    background: #0c1633;
+    border: solid #152a52;
+    color: #e8e4d9;
+}
+
+#transcript-filter:focus {
+    border: solid #1e3a6e;
+}
+
+#transcript-list-view {
+    height: 1fr;
+    background: #080e1a;
+    scrollbar-background: #080e1a;
+    scrollbar-color: #1e3a6e;
+}
+
+TranscriptList ListItem {
+    padding: 0 1;
+    background: #080e1a;
+}
+
+TranscriptList ListItem.--highlight,
+TranscriptList ListView:focus ListItem.--highlight {
+    background: #15264a;
+}
+
+/* ── Log band (stacked under transcripts) ── */
+LogBand {
+    height: 1fr;
+    background: #080e1a;
+    border-top: solid #152a52;
+}
+
+LogBand .panel-header {
+    height: 1;
+    padding: 0 1;
+    background: #0c1633;
+    color: #d8b43a;
+    text-style: bold;
+}
+
+#log-band-view {
+    height: 1fr;
+    padding: 0 1;
+    scrollbar-background: #080e1a;
+    scrollbar-color: #1e3a6e;
+}
+
+LogBand .log-info {
+    color: #5a8fc4;
+}
+
+LogBand .log-warning {
+    color: #d8b43a;
+}
+
+LogBand .log-error,
+LogBand .log-critical {
+    color: #c94a4a;
+}
+
+LogBand .log-debug {
+    color: #6b7a99;
+}
+
+LogBand .log-time {
+    color: #6b7a99;
+}
+
+/* ── Live band ── */
+/* height 4 = head + line + a trailing blank row so the ticker doesn't collide
+   with the footer below it. */
+LiveBand {
+    height: 4;
+    background: #0c1633;
+    border-top: solid #1e3a6e;
+    padding: 0 0 1 0;
+}
+
+LiveBand .live-head {
+    height: 1;
+    padding: 0 2;
+}
+
+#live-title {
+    width: 1fr;
+    color: #d8b43a;
+    text-style: bold;
+}
+
+#live-dur {
+    width: auto;
+    color: #6b7a99;
+}
+
+#live-line {
+    height: 1;
+    padding: 0 2;
+    color: #9aa6c0;
+}
+
+/* ── Footer ── */
+KeyFooter {
+    height: 1;
+    background: #102040;
+    color: #6b7a99;
+    padding: 0 2;
+}
+
+KeyFooter .key-hint {
+    color: #d8b43a;
+}
+
+/* ── Settings modal ── */
+SettingsScreen {
+    align: center middle;
+}
+
+#settings-modal {
+    width: 90%;
+    height: 90%;
+    max-width: 108;
+    background: #0c1633;
+    border: solid #1e3a6e;
+    padding: 0;
+}
+
+#settings-header {
+    height: 4;
+    padding: 1 3 0 3;
+    background: #102040;
+    border-bottom: solid #1e3a6e;
+}
+
+#settings-title {
+    text-style: bold;
+    color: #d8b43a;
+    height: 1;
+}
+
+#settings-subtitle {
+    color: #6b7a99;
+    height: 1;
+}
+
+#settings-body {
+    height: 1fr;
+}
+
+/* Sidebar: a fixed-width rail, not half the modal. */
+#settings-nav {
+    width: 22;
+    border-right: solid #1e3a6e;
+    background: #081020;
+    padding: 1 0 0 0;
+}
+
+#settings-nav-title {
+    color: #45557a;
+    text-style: bold;
+    padding: 0 0 0 2;
+    height: 1;
+}
+
+#settings-nav-list {
+    width: 22;
+    height: 1fr;
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+
+#settings-nav-list ListItem {
+    padding: 0 2;
+    height: 1;
+    background: transparent;
+    color: #c4cee0;
+}
+
+#settings-nav-list ListItem.--highlight,
+#settings-nav-list ListItem.selected {
+    background: #16315e;
+    color: #d8b43a;
+    text-style: bold;
+}
+
+#settings-content {
+    height: 1fr;
+    padding: 1 3;
+    overflow-y: auto;
+}
+
+.settings-section {
+    height: auto;
+}
+
+/* Section heading + description so each panel reads as a labeled form. */
+.section-head {
+    color: #d8b43a;
+    text-style: bold;
+    height: 1;
+}
+
+.section-desc {
+    color: #6b7a99;
+    height: auto;
+    padding: 0 0 1 0;
+    border-bottom: solid #16315e;
+    margin-bottom: 1;
+}
+
+.settings-section Label {
+    color: #8a99b8;
+    height: 1;
+    padding: 0;
+    margin-top: 1;
+}
+
+.settings-section Input,
+.settings-section Select {
+    width: 1fr;
+    margin-bottom: 0;
+}
+
+.settings-section Checkbox {
+    margin-top: 1;
+    background: transparent;
+}
+
+/* Primary "Save <section>" buttons sit flush-left with breathing room. */
+.settings-section Button {
+    margin-top: 1;
+}
+
+/* Sound cue rows: a wide select + compact action buttons on one line. */
+.sound-row {
+    height: 3;
+    margin-bottom: 0;
+}
+
+.sound-row .sound-select {
+    width: 1fr;
+    margin-bottom: 0;
+}
+
+.sound-row .sound-btn {
+    width: auto;
+    min-width: 12;
+    margin: 0 0 0 1;
+}
+
+#settings-footer {
+    height: 1;
+    padding: 0 3;
+    background: #102040;
+    color: #6b7a99;
+    border-top: solid #1e3a6e;
+}
+
+#settings-status {
+    color: #5a8fc4;
+    height: 1;
+    padding: 0 3;
+}
+
+/* ── Help modal ── */
+HelpScreen {
+    align: center middle;
+}
+
+#help-modal {
+    width: 60;
+    height: auto;
+    max-height: 80%;
+    background: #0c1633;
+    border: solid #1e3a6e;
+    padding: 1 2;
+}
+
+#help-title {
+    text-style: bold;
+    color: #d8b43a;
+    height: 1;
+    padding-bottom: 1;
+}
+
+.help-row {
+    height: 1;
+    color: #e8e4d9;
+}
+
+.help-key {
+    color: #d8b43a;
+    width: 8;
+}
+
+/* ── Onboarding (light restyle) ── */
+#onboarding-body {
+    padding: 1 2;
+    height: auto;
+}
+
+#onboarding-title {
+    padding: 1 2;
+    color: #d8b43a;
+    text-style: bold;
+}

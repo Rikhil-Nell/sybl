@@ -6,7 +6,8 @@ import asyncio
 
 import typer
 
-from sybl.config import ConfigManager
+from sybl.config import ConfigError, ConfigManager
+from sybl.config.edit import EditorError, ensure_config_file, open_in_editor
 from sybl.config.sounds import ensure_sounds_layout
 from sybl.config.vocabulary import VocabularyError, VocabularyStore
 from sybl.ipc.client import IpcClient, IpcConnectionError, is_daemon_running
@@ -62,6 +63,33 @@ def config_show_command() -> None:
     manager = ConfigManager()
     config = manager.load()
     typer.echo(config.model_dump_json(indent=2))
+
+
+@config_app.command("edit")
+def config_edit_command() -> None:
+    """Open the config file in your editor ($VISUAL/$EDITOR), then reload."""
+    path = ensure_config_file()
+    try:
+        open_in_editor(path)
+    except EditorError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
+
+    if not is_daemon_running():
+        typer.echo(f"Saved {path}.")
+        return
+
+    try:
+        asyncio.run(_reload_daemon_config())
+    except ConfigError as exc:
+        typer.echo(f"Saved {path}, but it is invalid: {exc}", err=True)
+        typer.echo("Fix the file and re-run `sybl config edit`.", err=True)
+        raise typer.Exit(code=1) from exc
+    except IpcConnectionError as exc:
+        typer.echo(f"Saved {path}, but the daemon could not reload it: {exc}", err=True)
+        typer.echo("Restart with `sybl stop && sybl start` to apply.", err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"Saved {path} and reloaded the running daemon.")
 
 
 @config_app.command("set-key")
@@ -161,6 +189,12 @@ def register(app: typer.Typer) -> None:
 async def _fetch_daemon_config() -> dict:
     client = IpcClient()
     return await client.get_config()
+
+
+async def _reload_daemon_config() -> None:
+    config = ConfigManager().load()
+    client = IpcClient()
+    await client.patch_config(config.model_dump(mode="json"))
 
 
 async def _set_key_via_daemon(provider: str, api_key: str) -> None:
