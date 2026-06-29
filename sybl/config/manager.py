@@ -11,6 +11,7 @@ import tomli_w
 
 from sybl.config.models import SyblConfig
 from sybl.config.paths import config_path
+from sybl.config.sounds import ensure_sounds_layout
 from sybl.hotkeys.bindings import BindingParseError, parse_binding
 
 logger = logging.getLogger("sybl.config")
@@ -66,6 +67,7 @@ class ConfigManager:
 
     def init(self) -> SyblConfig:
         config = SyblConfig()
+        ensure_sounds_layout()
         self.save(config)
         return config
 

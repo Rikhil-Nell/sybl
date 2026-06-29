@@ -60,10 +60,20 @@ class TuiIpcClient:
     async def get_history(self) -> list[dict[str, Any]]:
         return await self.client.get_history()
 
+    async def list_sounds(self) -> dict[str, Any]:
+        return await self.client.list_sounds()
+
+    async def import_sound(self, role: str, path: str) -> dict[str, Any]:
+        return await self.client.import_sound(role, path)
+
+    async def clear_sound(self, role: str) -> dict[str, Any]:
+        return await self.client.clear_sound(role)
+
     async def stream_events(self) -> AsyncIterator[dict[str, Any]]:
         async for event in self.client.stream_events():
             yield event
 
-    async def connect_event_reader(self) -> asyncio.StreamReader:
-        reader, _writer = await self.client.connect_events()
-        return reader
+    async def connect_event_reader(
+        self,
+    ) -> tuple[asyncio.StreamReader, asyncio.StreamWriter]:
+        return await self.client.connect_events()

@@ -133,13 +133,25 @@ class IpcClient:
         entries = result.get("entries", [])
         return list(entries) if isinstance(entries, list) else []
 
+    async def list_sounds(self) -> dict[str, Any]:
+        return await self.command(CommandName.LIST_SOUNDS)
+
+    async def import_sound(self, role: str, path: str) -> dict[str, Any]:
+        return await self.command(
+            CommandName.IMPORT_SOUND,
+            {"role": role, "path": path},
+        )
+
+    async def clear_sound(self, role: str) -> dict[str, Any]:
+        return await self.command(CommandName.CLEAR_SOUND, {"role": role})
+
     async def shutdown(self) -> None:
         await self.command(CommandName.SHUTDOWN)
 
     async def stream_events(self) -> AsyncIterator[dict[str, Any]]:
-        reader, writer = await asyncio.open_connection(
-            self.info.host,
-            self.info.event_port,
+        reader, writer = await asyncio.wait_for(
+            asyncio.open_connection(self.info.host, self.info.event_port),
+            timeout=10.0,
         )
         hello = {"type": "hello", "token": self.info.token}
         writer.write(encode_line(hello))
@@ -158,9 +170,9 @@ class IpcClient:
                 pass
 
     async def connect_events(self) -> tuple[asyncio.StreamReader, asyncio.StreamWriter]:
-        reader, writer = await asyncio.open_connection(
-            self.info.host,
-            self.info.event_port,
+        reader, writer = await asyncio.wait_for(
+            asyncio.open_connection(self.info.host, self.info.event_port),
+            timeout=10.0,
         )
         writer.write(
             encode_line({"type": "hello", "token": self.info.token}),

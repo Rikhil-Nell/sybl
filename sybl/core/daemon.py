@@ -7,19 +7,27 @@ import logging
 import secrets
 import signal
 import time
+from pathlib import Path
 from typing import Any
 
 from sybl import __version__
 from sybl.config.manager import ConfigManager
 from sybl.config.models import SyblConfig
-from sybl.config.paths import log_path
+from sybl.config.paths import log_path, sounds_dir
+from sybl.config.sounds import (
+    SoundCueError,
+    clear_sound_cue,
+    ensure_sounds_layout,
+    import_sound_cue,
+    list_sound_files,
+)
 from sybl.core.dictation import DictationController
 from sybl.core.events import EventBus
 from sybl.core.history import TranscriptHistory
 from sybl.core.state import SessionState
 from sybl.core.transcribe import TranscribeOutcome
 from sybl.hotkeys import create_hotkey_manager
-from sybl.indicator import create_indicator
+from sybl.indicator import create_indicator, create_sound_cue
 from sybl.ipc.protocol import CommandName, DaemonInfo
 from sybl.ipc.server import IpcServer
 from sybl.ipc.single_instance import DaemonLock
@@ -62,6 +70,8 @@ class SyblDaemon:
         )
         self._hotkeys = create_hotkey_manager(self._config.hotkey)
         self._indicator = create_indicator(self._config)
+        self._sound_cue = create_sound_cue(self._config.indicator)
+        self._session_state = SessionState.IDLE
         self._wire_log_handler()
 
     @property
@@ -99,8 +109,15 @@ class SyblDaemon:
 
     async def _on_state_changed(self, state: SessionState) -> None:
         await self._events.emit_state_changed(state)
+        if (
+            self._session_state is SessionState.LISTENING
+            and state is not SessionState.LISTENING
+        ):
+            self._sound_cue.play_stop()
+        self._session_state = state
         if state is SessionState.LISTENING:
             self._indicator.show()
+            self._sound_cue.play_start()
             if self._level_task is None or self._level_task.done():
                 self._level_task = asyncio.create_task(self._poll_levels())
         else:
@@ -199,6 +216,29 @@ class SyblDaemon:
                 entries = self._history.get_recent(int(count))
             return {"entries": [e.to_dict() for e in entries]}
 
+        if command is CommandName.LIST_SOUNDS:
+            ensure_sounds_layout()
+            indicator = self._config.indicator
+            return {
+                "sounds_dir": str(sounds_dir()),
+                "files": list_sound_files(),
+                "start_file": indicator.sound_start_file,
+                "stop_file": indicator.sound_stop_file,
+            }
+
+        if command is CommandName.IMPORT_SOUND:
+            role = str(params.get("role", ""))
+            source = str(params.get("path", ""))
+            if role not in ("start", "stop") or not source:
+                raise ValueError("role (start|stop) and path are required")
+            return await self._import_sound(role, source)
+
+        if command is CommandName.CLEAR_SOUND:
+            role = str(params.get("role", ""))
+            if role not in ("start", "stop"):
+                raise ValueError("role must be start or stop")
+            return await self._clear_sound(role)
+
         if command is CommandName.SHUTDOWN:
             self._shutdown_event.set()
             return {"stopping": True}
@@ -217,11 +257,50 @@ class SyblDaemon:
         if indicator_changed:
             self._indicator.shutdown()
             self._indicator = create_indicator(new_config)
+            self._sound_cue.shutdown()
+            self._sound_cue = create_sound_cue(new_config.indicator)
         if hotkey_changed:
             await self._hotkeys.stop()
             self._hotkeys = create_hotkey_manager(new_config.hotkey)
             await self._hotkeys.start(self._controller.handle_hotkey_event)
         await self._events.emit_config_changed()
+
+    def _reload_sound_cue(self) -> None:
+        self._sound_cue.shutdown()
+        self._sound_cue = create_sound_cue(self._config.indicator)
+
+    async def _import_sound(self, role: str, source: str) -> dict[str, Any]:
+        try:
+            filename = await asyncio.to_thread(
+                import_sound_cue,
+                Path(source),
+                role,  # type: ignore[arg-type]
+            )
+        except SoundCueError as exc:
+            raise ValueError(str(exc)) from exc
+
+        key = "sound_start_file" if role == "start" else "sound_stop_file"
+        previous = getattr(self._config.indicator, key)
+        patch = {"indicator": {key: filename, "sound_enabled": True}}
+        if previous != filename:
+            await self.apply_config(patch)
+        else:
+            self._reload_sound_cue()
+        return {"role": role, "filename": filename}
+
+    async def _clear_sound(self, role: str) -> dict[str, Any]:
+        await asyncio.to_thread(clear_sound_cue, role)  # type: ignore[arg-type]
+        key = "sound_start_file" if role == "start" else "sound_stop_file"
+        merged = self._config.model_dump(mode="python")
+        indicator = dict(merged.get("indicator", {}))
+        indicator[key] = None
+        merged["indicator"] = indicator
+        new_config = SyblConfig.model_validate(merged)
+        self._config = new_config
+        self._config_manager.save(new_config)
+        self._reload_sound_cue()
+        await self._events.emit_config_changed()
+        return {"role": role, "cleared": True}
 
     async def run(self) -> None:
         self._lock.acquire()
@@ -272,6 +351,7 @@ class SyblDaemon:
         await self._hotkeys.stop()
         self._indicator.hide()
         self._indicator.shutdown()
+        self._sound_cue.shutdown()
         if self._ipc is not None:
             await self._ipc.stop()
             self._ipc = None

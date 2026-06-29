@@ -71,7 +71,11 @@ class TkCaptureIndicator:
         if self._failed.is_set():
             return
         clamped = max(0.0, min(1.0, level))
-        self._commands.put(_Command(_CmdKind.LEVEL, level=clamped))
+        x, y = get_cursor_pos()
+        x += self._config.offset_x
+        y += self._config.offset_y
+        x, y = clamp_to_screen(x, y, self._config.size_px, self._bar_height())
+        self._commands.put(_Command(_CmdKind.LEVEL, level=clamped, x=x, y=y))
 
     def shutdown(self) -> None:
         if self._failed.is_set():
@@ -95,6 +99,7 @@ class TkCaptureIndicator:
             window.attributes("-topmost", True)
             window.configure(bg="#1a1a1a")
             window.geometry(f"{size}x{bar_h}")
+            window.withdraw()
 
             canvas = tk.Canvas(
                 window,
@@ -144,6 +149,7 @@ class TkCaptureIndicator:
                     window.withdraw()
                     visible = False
                 elif cmd.kind is _CmdKind.LEVEL and visible:
+                    window.geometry(f"{size}x{bar_h}+{cmd.x}+{cmd.y}")
                     fill_width = 4 + int((size - 8) * cmd.level)
                     canvas.coords(level_bar, 4, 4, fill_width, bar_h - 4)
                     canvas.itemconfig(border, outline="#4ade80")

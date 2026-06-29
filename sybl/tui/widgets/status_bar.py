@@ -13,6 +13,10 @@ class StatusBar(Static):
         color: $text;
         padding: 0 1;
     }
+    StatusBar.disconnected {
+        background: $error;
+        color: $text;
+    }
     """
 
     def update_status(
@@ -21,9 +25,18 @@ class StatusBar(Static):
         state: str,
         provider: str,
         hotkey: str,
+        hotkey_mode: str = "ptt",
         audio_device: str,
+        connected: bool = True,
+        banner: str | None = None,
     ) -> None:
         device = audio_device or "default"
+        if banner:
+            self.set_class(not connected, "disconnected")
+            self.update(banner)
+            return
+        self.set_class(not connected, "disconnected")
         self.update(
-            f"State: {state} | Provider: {provider} | Hotkey: {hotkey} | Mic: {device}"
+            f"State: {state} | Provider: {provider} | "
+            f"Hotkey: {hotkey} ({hotkey_mode}) | Mic: {device}"
         )
