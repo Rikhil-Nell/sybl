@@ -1,7 +1,7 @@
 # AGENTS.md
 
 > Living source of truth for the sybl project. Read this first. Keep it current.
-> Last updated: 2026-06-28 (sound cues folder, TUI sound import, cursor-following pill)
+> Last updated: 2026-06-29 (Cursor Cloud env setup notes)
 
 ---
 
@@ -306,3 +306,31 @@ Rules:
 4. **If reality and this file disagree, this file is wrong — fix it.**
 5. When you finish a unit of work, ask yourself: *"Did anything here go stale?"*
    If yes, update it before ending your turn.
+
+## Cursor Cloud specific instructions
+
+The cloud VM is **headless Linux**; sybl is **Windows-first**. The startup update
+script runs `uv sync` (deps + dev group). System packages (`portaudio19-dev`,
+`xvfb`, `python3-dev`) and `uv` are already baked into the snapshot — `uv` is on
+`PATH`. `python3-dev` is required because `pynput`'s transitive `evdev` builds a C
+extension needing `Python.h`.
+
+- **Lint / test:** see `docs/DEVELOPMENT.md`. Run the suite with
+  `python3 scripts/run_tests.py` (this VM exposes `python3`, not `python`). It runs
+  ruff + `pytest -m "not integration"` under `xvfb-run`.
+- **Known headless test failure:** `tests/test_hotkeys.py::test_emit_posts_to_async_handler`
+  fails here with `Xlib.error.ConnectionClosedError` during pynput's X-RECORD
+  listener teardown. It is a cumulative Xvfb/pynput teardown race across multiple
+  listener start/stop cycles — it passes in isolation and is green on GitHub CI
+  (169 passed). Not a code defect. For a fully green local run, deselect it:
+  `--deselect tests/test_hotkeys.py::test_emit_posts_to_async_handler`.
+- **The daemon cannot run on Linux.** `sybl start` (and `SyblDaemon`) eagerly build
+  the Windows-only `TextInjector`, so they raise `NotImplementedError: Text injection
+  is Windows-only in Phase 5`. Hotkeys/injection/indicator are Windows-only by design.
+- **No mic, no GUI, no STT keys headless.** `sybl audio devices` finds none and live
+  `sybl transcribe` / real STT need a BYOK provider key (Groq/Deepgram) + a mic.
+  What *does* run headless: `sybl doctor`, `sybl config`, and the core text path
+  (`sybl.core.postprocess.process_text` + `sybl.core.voice_commands.apply_voice_commands`),
+  which is the speech→typed-text transformation every transcript flows through.
+- Tests are hermetic via `SYBL_CONFIG_DIR` / `SYBL_STATE_DIR`; the Linux keyring uses
+  `PYTHON_KEYRING_BACKEND=keyrings.alt.file.PlaintextKeyring` (set by `run_tests.py`).
