@@ -131,10 +131,10 @@ Supported phrases: `new line` / `newline`, `period`, `comma`.
 | Key | Default | Description |
 | --- | --- | --- |
 | `enabled` | `true` | Show listening indicator while dictating |
-| `strategy` | `"overlay"` | `"overlay"` (tk pill), `"pill"` (Qt dock pill, Windows), or `"none"`. Legacy `"orb"` → `"pill"`. |
+| `strategy` | `"pill"` | `"pill"` (Qt dock pill, Windows), or `"none"`. Legacy `"overlay"` / `"orb"` → `"pill"`. |
 | `size_px` | `72` | Reserved for future pill sizing (pixels) |
-| `offset_x` | `16` | Horizontal offset from cursor (tk `overlay` + `anchor=cursor`) |
-| `offset_y` | `16` | Vertical offset from cursor (tk `overlay` + `anchor=cursor`) |
+| `offset_x` | `16` | Reserved (legacy tk cursor offset) |
+| `offset_y` | `16` | Reserved (legacy tk cursor offset) |
 | `anchor` | `"top_center"` | Screen anchor: `top_center` (dock pill), `top_right`, `top_left`, `bottom_right`, `bottom_left`, `cursor` |
 | `margin_px` | `0` | Margin from top work-area edge for dock pill (0–256) |
 | `orb_accent` | `"#7b2ff7"` | Primary wave color (hex, purple) |
@@ -170,17 +170,16 @@ to edit them down first. Override filenames with `sound_start_file` / `sound_sto
 **TUI:** `sybl tui` → Settings (`s`) — toggle sound, set volume, browse or paste a path
 to import WAV files, or pick **Built-in chime** per cue.
 
-On non-Windows platforms the tk `overlay` strategy degrades to a no-op. The optional
-**pill** strategy (`sybl[pill]`, PySide6 on Windows) has its own fallback chain — see
-[OVERLAY.md](OVERLAY.md).
+On non-Windows platforms the listening pill degrades to a no-op (dictation unaffected).
+See [OVERLAY.md](OVERLAY.md).
 
-Example — enable the glass orb:
+Example — customize pill colors:
 
 ```toml
 [indicator]
-strategy = "orb"
-anchor = "top_right"
-margin_px = 24
+strategy = "pill"
+anchor = "top_center"
+margin_px = 0
 orb_accent = "#7b2ff7"
 orb_accent_secondary = "#f97316"
 ```
@@ -188,7 +187,7 @@ orb_accent_secondary = "#f97316"
 Or via CLI:
 
 ```powershell
-sybl config set indicator.strategy orb
+sybl config set indicator.orb_accent "#7b2ff7"
 ```
 
 ## CLI config commands

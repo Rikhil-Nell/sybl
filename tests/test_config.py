@@ -33,7 +33,7 @@ def test_defaults_validate() -> None:
     assert config.vocabulary.enabled is True
     assert config.voice_commands.enabled is True
     assert config.indicator.enabled is True
-    assert config.indicator.strategy == "overlay"
+    assert config.indicator.strategy == "pill"
     assert config.indicator.size_px == 72
     assert config.ui.onboarding_complete is False
     assert config.ui.first_run_shown is False

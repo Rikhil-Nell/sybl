@@ -18,8 +18,7 @@ no sybl-hosted backend: your audio goes straight to the STT provider you choose.
 - **BYOK STT** — Groq Whisper (batch) and Deepgram (streaming) today; pluggable providers
 - **Background daemon** — `sybl start` returns immediately; `sybl tui` for logs and settings
 - **Types where you were focused** — clipboard-paste injection on Windows
-- **Listening indicator** — tkinter pill near the cursor (Windows) or optional
-  Qt dock pill (`sybl[pill]`)
+- **Listening indicator** — Qt dock pill at top-center (Windows; bundled with install)
 - **Sound cues** — built-in chime or custom `start.wav` / `stop.wav` in your config folder
 - **Custom vocabulary** — STT hints for names and jargon via `sybl config vocab`
 - **Voice commands** — `new line`, `period`, `comma` in final transcripts
@@ -37,14 +36,8 @@ Or with [uv](https://docs.astral.sh/uv/):
 uv tool install sybl
 ```
 
-For the Qt dock pill indicator (optional `PySide6` extra):
-
-```powershell
-uv tool install "sybl[pill]"
-```
-
 Requires **Python 3.12+**. Windows is the primary supported platform for the full
-core loop (hotkeys, injection, indicator).
+core loop (hotkeys, injection, listening pill).
 
 First install pulls ~45 Python packages (numpy, textual, STT SDKs, etc.) — expect
 1–3 minutes on a cold `pipx install`; upgrades are faster.
@@ -76,7 +69,7 @@ See [Getting started](docs/getting-started.md) for the full walkthrough.
 | [CLI reference](docs/CLI.md) | Categorized commands, `--json`, wizards, exit codes |
 | [Providers](docs/providers.md) | Groq & Deepgram BYOK setup |
 | [Configuration](docs/configuration.md) | `config.toml` reference |
-| [Overlay indicator](docs/OVERLAY.md) | Tk pill vs glass orb (`sybl[orb]`) |
+| [Overlay indicator](docs/OVERLAY.md) | Qt listening pill |
 | [Permissions](docs/permissions.md) | Microphone and injection notes |
 | [Development](docs/DEVELOPMENT.md) | Local dev, phases, integration tests |
 | [Roadmap](docs/ROADMAP.md) | What's built and what's next |

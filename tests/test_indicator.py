@@ -1,8 +1,6 @@
 """Tests for capture indicator factory and no-op implementation."""
 
-from unittest.mock import patch
-
-import pytest
+from unittest.mock import MagicMock, patch
 
 from sybl.config.models import IndicatorConfig, SyblConfig
 from sybl.indicator import create_indicator
@@ -27,23 +25,43 @@ def test_factory_strategy_none() -> None:
     assert isinstance(create_indicator(config), NoOpIndicator)
 
 
-def test_factory_overlay_on_non_windows() -> None:
+def test_factory_default_strategy_is_pill() -> None:
+    assert IndicatorConfig().strategy == "pill"
+
+
+def test_strategy_overlay_normalizes_to_pill() -> None:
+    cfg = IndicatorConfig(strategy="overlay")  # type: ignore[arg-type]
+    assert cfg.strategy == "pill"
+
+
+def test_factory_pill_on_non_windows() -> None:
     config = SyblConfig()
     with patch("sybl.indicator.sys.platform", "linux"):
         assert isinstance(create_indicator(config), NoOpIndicator)
 
 
-@pytest.mark.integration
-@pytest.mark.skipif(
-    __import__("sys").platform != "win32",
-    reason="Windows tkinter path",
-)
-def test_factory_overlay_on_windows() -> None:
-    from sybl.indicator.tk_win import TkCaptureIndicator
+@patch("sybl.indicator.pill_qt_win.subprocess.Popen")
+@patch("sybl.indicator.qt_available", return_value=True)
+def test_factory_pill_on_windows(mock_qt: MagicMock, mock_popen: MagicMock) -> None:
+    import sys
+
+    if sys.platform != "win32":
+        return
+
+    from sybl.indicator.pill_qt_win import QtPillIndicator
+
+    fake = MagicMock()
+    fake.stdin = MagicMock()
+    fake.stdout = MagicMock()
+    fake.stdout.readline.return_value = "ready\n"
+    fake.stderr = MagicMock()
+    fake.pid = 1
+    fake.poll.return_value = None
+    mock_popen.return_value = fake
 
     config = SyblConfig()
     indicator = create_indicator(config)
     try:
-        assert isinstance(indicator, TkCaptureIndicator)
+        assert isinstance(indicator, QtPillIndicator)
     finally:
         indicator.shutdown()

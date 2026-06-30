@@ -691,69 +691,36 @@ def _check_indicator(config) -> list[CheckResult]:
     if indicator.sound_enabled:
         sound_note = "; sound cue enabled"
 
-    if indicator.strategy == "pill":
-        results: list[CheckResult] = []
-        from sybl.indicator import qt_available
+    results: list[CheckResult] = []
+    from sybl.indicator import qt_available
 
-        if qt_available():
-            results.append(
-                CheckResult(
-                    "Capture indicator (pill)",
-                    CheckStatus.PASS,
-                    f"PySide6 available (Qt dock pill){sound_note}",
-                )
-            )
-        else:
-            results.append(
-                CheckResult(
-                    "Capture indicator (pill)",
-                    CheckStatus.FAIL,
-                    "PySide6 not installed",
-                    remediation="Install optional extra: uv sync --extra pill",
-                )
-            )
-
-        if sys.platform != "win32":
-            results.append(
-                CheckResult(
-                    "Qt pill overlay",
-                    CheckStatus.WARN,
-                    "Windows-only in this release",
-                )
-            )
-        return results
-
-    if sys.platform != "win32":
-        return [
+    if qt_available():
+        results.append(
             CheckResult(
                 "Capture indicator",
-                CheckStatus.WARN,
-                f"overlay strategy not implemented on {sys.platform} yet{sound_note}",
+                CheckStatus.PASS,
+                f"Qt listening pill (PySide6 installed){sound_note}",
             )
-        ]
-
-    try:
-        import tkinter as tk
-
-        root = tk.Tk()
-        root.withdraw()
-        root.destroy()
-    except Exception as exc:
-        return [
+        )
+    else:
+        results.append(
             CheckResult(
                 "Capture indicator",
                 CheckStatus.FAIL,
-                f"tkinter unavailable: {exc}",
+                "PySide6 not installed",
+                remediation="Reinstall sybl from PyPI: uv tool install sybl",
             )
-        ]
-
-    return [
-        CheckResult(
-            "Capture indicator",
-            CheckStatus.PASS,
-            f"overlay enabled ({indicator.size_px}px pill near cursor){sound_note}",
         )
-    ]
+
+    if sys.platform != "win32":
+        results.append(
+            CheckResult(
+                "Qt listening pill",
+                CheckStatus.WARN,
+                f"Windows-only in this release{sound_note}",
+            )
+        )
+    return results
 
 
 def _check_audio() -> list[CheckResult]:

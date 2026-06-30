@@ -32,28 +32,20 @@ def qt_available() -> bool:
 def _try_pill_indicator(config: SyblConfig) -> CaptureIndicator | None:
     if not qt_available():
         logger.warning(
-            "indicator.strategy=pill requires PySide6; install with: uv tool install "
-            "'sybl[pill]' (or pip install 'sybl[pill]')"
+            "Qt listening pill requires PySide6; reinstall sybl from PyPI "
+            "(uv tool install sybl / pipx install sybl)"
         )
         return None
 
     if sys.platform != "win32":
-        logger.warning("Qt pill overlay is Windows-only in this release")
+        logger.warning("Qt listening pill is Windows-only in this release")
         return None
 
     from sybl.indicator.pill_qt_win import QtPillIndicator
 
     indicator = QtPillIndicator(config.indicator)
-    logger.info("Qt pill overlay ready (lazy spawn on listen)")
+    logger.info("Qt listening pill ready (lazy spawn on listen)")
     return indicator
-
-
-def _try_tk_indicator(config: SyblConfig) -> CaptureIndicator | None:
-    if sys.platform != "win32":
-        return None
-    from sybl.indicator.tk_win import TkCaptureIndicator
-
-    return TkCaptureIndicator(config.indicator)
 
 
 def create_indicator(config: SyblConfig) -> CaptureIndicator:
@@ -62,22 +54,10 @@ def create_indicator(config: SyblConfig) -> CaptureIndicator:
         logger.info("Capture indicator disabled (strategy=%s)", indicator.strategy)
         return NoOpIndicator()
 
-    if indicator.strategy == "pill":
-        pill = _try_pill_indicator(config)
-        if pill is not None:
-            logger.info("Capture indicator using Qt pill overlay")
-            return pill
-        tk = _try_tk_indicator(config)
-        if tk is not None:
-            logger.info("Capture indicator falling back to tk overlay")
-            return tk
-        logger.warning("Capture indicator unavailable; using no-op")
-        return NoOpIndicator()
+    pill = _try_pill_indicator(config)
+    if pill is not None:
+        logger.info("Capture indicator using Qt listening pill")
+        return pill
 
-    if sys.platform == "win32" and indicator.strategy == "overlay":
-        tk = _try_tk_indicator(config)
-        if tk is not None:
-            logger.info("Capture indicator using tk overlay")
-            return tk
-    logger.info("Capture indicator using no-op (strategy=%s)", indicator.strategy)
+    logger.warning("Capture indicator unavailable; using no-op")
     return NoOpIndicator()

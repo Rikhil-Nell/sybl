@@ -114,9 +114,9 @@ Or change mode/binding in the TUI: `sybl tui` → **Settings** (`s`).
 
 Press **Esc** while listening to cancel before paste.
 
-A small **listening pill** follows your cursor on Windows while dictating. Optional
-**sound cues** play on listen start/stop — configure in TUI Settings or
-`[indicator]` in config; see [configuration.md](configuration.md).
+A small **listening pill** appears at the top center of the screen on Windows while
+dictating. Optional **sound cues** play on listen start/stop — configure in TUI Settings
+or `[indicator]` in config; see [configuration.md](configuration.md).
 
 ## Other useful commands
 

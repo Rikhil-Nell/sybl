@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-06-29
+
+Mission-control TUI overhaul, scriptable CLI, and Qt dock listening pill as the
+default Windows indicator.
+
+### Added
+
+- **Mission-control TUI** — Sibyl Royal theme; hero status band with RMS meter;
+  live band for streaming partials; session detail pane; transcripts over logs
+- **Settings config editor** — section rail, labeled forms, sound-cue rows; all
+  writes via daemon IPC
+- **`sybl config edit`** and dashboard **`e`** — open `config.toml` in `$EDITOR`,
+  reload running daemon
+- **Qt dock listening pill** — top-center notch-style overlay with wave bars,
+  elapsed timer, and transcribing spinner; multi-monitor DPI-safe positioning
+- **Scriptable CLI** — `sybl setup`, `restart`, `logs`, `providers`; `config get`/`set`;
+  `--json` on `status`/`doctor`/`config show`; stable exit codes; `--no-input`
+- **`sybl indicator demo`** — preview the pill without the daemon
+- **`docs/CLI.md`** and **`docs/OVERLAY.md`**
+
+### Changed
+
+- **Qt pill is the default indicator** — PySide6 ships as a core dependency; no
+  `[pill]` extra; legacy `overlay`/`orb` config values normalize to `pill`
+- Tkinter cursor-following overlay removed from the factory path
+- Pill stays visible through processing/injecting; hides on idle/cancel/error
+
 ## [0.1.1] - 2026-06-28
 
 Incremental polish release: Wispr-style hotkeys, background daemon, custom sound cues,
@@ -77,5 +104,6 @@ push-to-talk, STT provider plugins, clipboard-paste injection, and a Textual TUI
 - Integration tests requiring a microphone or live API keys are marked `@integration`
   and excluded from CI.
 
+[0.1.2]: https://github.com/Rikhil-Nell/sybl/releases/tag/v0.1.2
 [0.1.1]: https://github.com/Rikhil-Nell/sybl/releases/tag/v0.1.1
 [0.1.0]: https://github.com/Rikhil-Nell/sybl/releases/tag/v0.1.0

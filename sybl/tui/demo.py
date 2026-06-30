@@ -66,7 +66,7 @@ class DemoIpcClient:
             "hotkey_binding": "ctrl+alt+space",
             "hotkey_mode": "both",
             "audio_device": "Demo Microphone",
-            "version": "0.1.1",
+            "version": "0.1.2",
             "uptime_seconds": time.monotonic() - self._started,
         }
 

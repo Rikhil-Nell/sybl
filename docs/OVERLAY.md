@@ -1,94 +1,65 @@
-# Capture overlay (listening indicator)
+# Capture overlay (listening pill)
 
-While dictating, sybl can show a small on-screen indicator so you know the mic is live.
-The default on Windows is a **tkinter pill** near the cursor (`indicator.strategy =
-"overlay"`). For a dock-style Qt pill at the top of the screen, use the optional
-**pill** strategy.
+sybl shows a **Qt dock pill** at the top center of the screen while you dictate.
+It slides down on listen, shows voice-reactive wave bars, an elapsed timer, and
+switches to a spinner during transcribing.
 
-## Strategies
+PySide6 ships as a **core dependency** — a normal `uv tool install sybl` or
+`pipx install sybl` install includes everything. No extras required.
 
-| `indicator.strategy` | Behavior |
-| --- | --- |
-| `"overlay"` | Windows tkinter pill near cursor (default) |
-| `"pill"` | Qt dock pill — slides from top, voice-reactive waves, transcribing spinner (requires `sybl[pill]`, Windows) |
-| `"none"` | No on-screen indicator |
+## Config
 
-`strategy = "orb"` in older configs is accepted and normalized to `"pill"`.
-
-Sound cues (`indicator.sound_*`) work with any strategy.
-
-## Install the pill extra
-
-`PySide6` is a small pip extra for the Qt pill overlay.
-
-```powershell
-uv tool install "sybl[pill]"
-```
-
-Or with pip/pipx:
-
-```powershell
-pipx install "sybl[pill]"
-pip install "sybl[pill]"
-```
-
-Enable in config:
-
-```powershell
-sybl config set indicator.strategy pill
-sybl config set indicator.anchor top_center
-sybl restart
-```
-
-Or edit `config.toml`:
+Default (no changes needed):
 
 ```toml
 [indicator]
+enabled = true
 strategy = "pill"
 anchor = "top_center"
+margin_px = 0
 ```
 
-## Pill behavior
+Legacy `strategy = "overlay"` or `"orb"` in older configs is normalized to `"pill"`.
+Set `strategy = "none"` to disable the on-screen cue.
+
+## How it works
 
 The pill runs in a **separate overlay process** (`python -m sybl.indicator.pill_qt`)
-spawned by the daemon. That keeps the Qt UI off the asyncio event loop.
+controlled by the daemon over stdin NDJSON:
 
-- Top-center dock placement on the active monitor
-- Slides down from the top edge when you start dictating
-- **Listening:** voice-reactive wave bars (sybl purple/orange accents)
-- **Transcribing:** arc spinner + label; stays visible through STT and inject
-- Slides back up when the session returns to idle
-- Frameless, transparent, always-on-top, click-through
-- Commands over stdin as **NDJSON** lines: `show`, `hide`, `level`, `phase`, `config`, `quit`
+| Command | Effect |
+|---------|--------|
+| `show` | Slide pill down, reset to listening phase |
+| `hide` | Slide pill up |
+| `level` | RMS mic level (0–1) for wave bars |
+| `phase` | `"listening"` or `"processing"` |
+| `config` | Accent colors, margin, etc. |
 
 Implementation: `sybl/indicator/pill_qt/` (QML + host), wrapper in
 `sybl/indicator/pill_qt_win.py`.
 
-## Configuration
+## Keys
 
-| Key | Default | Description |
-| --- | --- | --- |
-| `anchor` | `"top_center"` | Dock pill placement (`top_center` recommended) |
-| `margin_px` | `0` | Distance below the top work-area edge when visible |
-| `orb_accent` | `"#7b2ff7"` | Primary wave color (purple) |
-| `orb_accent_secondary` | `"#f97316"` | Secondary wave color (orange) |
+| Key | Default | Notes |
+|-----|---------|-------|
+| `anchor` | `"top_center"` | Dock placement |
+| `margin_px` | `0` | Inset below top work-area edge |
+| `orb_accent` / `orb_accent_secondary` | purple / orange | Wave bar colors |
 
-See [configuration.md](configuration.md#indicator) for the full table.
+## Preview without the daemon
 
-## Fallback chain
+```powershell
+sybl indicator demo
+# or
+uv run python scripts/show_pill.py
+```
 
-When `strategy = "pill"`, `create_indicator()` tries:
+## Platform support
 
-1. **Qt pill** — if `PySide6` is installed (Windows)
-2. **tk overlay** — Windows pill near cursor
-3. **No-op**
-
-## Platform notes
-
-- **Windows** — primary target for the Qt dock pill
-- **macOS / Linux** — Qt pill not implemented in this release
+- **Windows** — primary target
+- **macOS / Linux** — pill not implemented yet; degrades to no-op (dictation unaffected)
 
 ## See also
 
-- [Configuration](configuration.md) — full `[indicator]` table
-- [Popup spike](POPUP-SPIKE.md) — original tk overlay research
+- [Configuration](configuration.md) — full `[indicator]` reference
+- [Popup spike](POPUP-SPIKE.md) — early indicator research

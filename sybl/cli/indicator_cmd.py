@@ -57,7 +57,7 @@ def indicator_demo(
     ind.show()
     if getattr(ind, "degraded", False):
         typer.secho(
-            "Overlay failed to start — install PySide6: uv sync --extra pill",
+            "Overlay failed to start — reinstall sybl (PySide6 should be bundled)",
             fg=typer.colors.RED,
             err=True,
         )

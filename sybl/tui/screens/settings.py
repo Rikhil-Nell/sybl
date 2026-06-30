@@ -170,7 +170,7 @@ class SettingsScreen(ModalScreen[None]):
     def _indicator_section(self) -> ComposeResult:
         with Vertical(id="indicator", classes="settings-section"):
             yield from self._head("indicator")
-            yield Checkbox("Overlay indicator enabled", id="indicator-enabled")
+            yield Checkbox("Listening pill enabled", id="indicator-enabled")
             yield Label("Size (px)")
             yield Input(id="indicator-size", value="48")
             yield Label("Offset X (px)")

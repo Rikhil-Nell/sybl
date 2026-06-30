@@ -118,7 +118,7 @@ IndicatorAnchor = Literal[
 
 class IndicatorConfig(BaseModel):
     enabled: bool = True
-    strategy: Literal["overlay", "none", "pill"] = "overlay"
+    strategy: Literal["overlay", "none", "pill"] = "pill"
     size_px: int = 72
     offset_x: int = 16
     offset_y: int = 16
@@ -144,7 +144,7 @@ class IndicatorConfig(BaseModel):
     @field_validator("strategy", mode="before")
     @classmethod
     def normalize_strategy(cls, value: object) -> object:
-        if value == "orb":
+        if value in {"orb", "overlay"}:
             return "pill"
         return value
 

@@ -1,7 +1,7 @@
 # AGENTS.md
 
 > Living source of truth for the sybl project. Read this first. Keep it current.
-> Last updated: 2026-06-29 (pill multi-monitor positioning + flush notch layout)
+> Last updated: 2026-06-29 (v0.1.2 release)
 
 ---
 
@@ -33,10 +33,9 @@ The guiding principles:
   - **Toggle / constant recording:** a double-press of the shortcut starts
     continuous recording; press again to stop.
   - Default **`both`** mode enables PTT and toggle together (Wispr-style).
-- **Popup capture surface.** When activated, a small on-screen indicator appears while
-  listening — default **tkinter pill** near the cursor (Windows), or opt-in **Qt dock
-  pill** (`indicator.strategy = "pill"`, `sybl[pill]` / PySide6); see
-  `docs/OVERLAY.md` and `sybl/indicator/pill_qt/`.
+- **Popup capture surface.** When activated, a small **Qt dock pill** appears at the
+  top center of the screen (Windows). Set `indicator.strategy = "none"` to disable.
+  See `docs/OVERLAY.md` and `sybl/indicator/pill_qt/`.
 - **BYOK transcription.** Audio is streamed/sent to the user's selected provider
   and transcribed quickly.
 - **Text injection.** The transcript is inserted at the current cursor location
@@ -48,19 +47,11 @@ The guiding principles:
 
 > Update this section every time the project's reality changes.
 
-- **Phase:** v0.1.2 mission-control TUI shipped — Sibyl Royal theme, zone
- dashboard (chrome → context → **hero status band** → session-detail | transcripts
- over logs → **live band** → footer). Hero band is the anchor: state dot+name,
- block-glyph RMS meter (driven by IPC `level`), label + hint. Session pane is a
- PIPELINE / PROVIDER / HOTKEY / TODAY detail column. Live band echoes the
- streaming partial while active and the last injected text when idle. Settings
- is a sidebar **config editor** — narrow section rail + per-section heading,
- description, labeled forms, and sized sound-cue rows. Config file can be opened
- in `$EDITOR` from the dashboard (`e`) or `sybl config edit`; both reload the
- running daemon. Help overlay. v0.1.1 core loop unchanged.
-- **Next releases:** **v0.1.2 polish** — README screenshots, log level filter.
-  **v0.2.0** — new providers, macOS/Linux backends, native helpers. See
-  `docs/ROADMAP.md`.
+- **Phase:** **v0.1.2 released** — mission-control TUI (Sibyl Royal theme, hero/live
+ bands, config editor, `e` / `sybl config edit`), scriptable CLI overhaul, **Qt dock
+ listening pill** at top-center (PySide6 bundled; default indicator on Windows).
+- **Next:** v0.1.x polish (onboarding wizard, log filter, README screenshots).
+  **v0.2.0** — new providers, macOS/Linux backends. See `docs/ROADMAP.md`.
 - **Code:** `sybl/audio/` implements `AudioCaptureSession` (sounddevice callback →
   asyncio queue, 16 kHz mono int16, resampling, dBFS peak metering, debug WAV save).
   `sybl/providers/` implements streaming-first STT interface, `ProviderCapabilities`,
@@ -76,8 +67,8 @@ The guiding principles:
  zone widgets `ChromeBar`/`ContextStrip`/`HeroBand`/`SessionPane`/`TranscriptList`/`LogBand`/`LiveBand`/`KeyFooter`;
  sidebar settings config-editor modal, help overlay, BYOK onboarding). `sybl/config/edit.py`
  resolves `$VISUAL`/`$EDITOR` (per-OS fallback) and opens the config file. `sybl/indicator/` implements
-  `CaptureIndicator` (NoOp + Windows tkinter overlay + optional **Qt dock pill**
-  subprocess behind `QtPillIndicator`; `strategy=pill` needs `sybl[pill]` / PySide6).
+  `CaptureIndicator` (NoOp + **Qt dock pill** subprocess on Windows via
+  `QtPillIndicator`; PySide6 is a core dependency).
   CLI: Hermes-style categorized help (Daemon / Dictation / Configuration /
  Diagnostics); global `--no-input`; stable exit codes; `--json` on `status`,
  `doctor`, `config show`, `providers`; `config get`/`set` dotted paths;
@@ -150,7 +141,7 @@ The guiding principles:
 | v0.1.2 CLI overhaul | **Scriptable-first CLI** — Rich help panels (Daemon/Dictation/Configuration/Diagnostics); global `--no-input`; stable exit codes; `--json` on `status`/`doctor`/`config show`/`providers`; `config get`/`set` dotted paths; `restart`/`logs`; `sybl setup` + interactive `config set-key` wizards (`questionary`); ASCII banner asset + `ui.first_run_shown` | Hermes-style agent surface without removing TUI; wizards TTY-gated; first-run banner to stderr so `--json` stdout stays clean. |
 | v0.1.2 orb indicator | **`indicator.strategy=orb`** — separate **WebView2/pywebview** overlay process (`python -m sybl.indicator.orb_web`); stdin **NDJSON** commands; HTML/CSS glass frame + WebGL dual-color fluid shader; **`WebViewOrbIndicator`** wrapper; fallback tk → no-op; optional extra **`sybl[orb]`** (`pywebview>=5.4,<6`); system **WebView2 Runtime** on Windows | Replaced PySide6/Qt QML orb (shader compile pain, cartoon bubble fallback); WebView enables glassmorphism + faster shader iteration; default strategy stays `overlay`. |
 | v0.1.2 pill rename | **`indicator.strategy=pill`** (legacy **`orb`** normalizes via validator); optional extra **`sybl[pill]`**; **`sybl[orb]`** kept as alias extra; default **`anchor=top_center`** for dock pill | No longer an orb visually or in naming; backward compat for existing configs. |
-| v0.1.2 pill layout | Qt pill positions via **`QGuiApplication.screenAt(QCursor.pos())`** + **`QScreen.availableGeometry()`** (not Win32 physical pixels); default **`margin_px=0`** flush to work-area top; QML left-aligned content + square top / rounded bottom (notch silhouette) | Fixes multi-monitor/DPI off-center placement; mac-style dock attach. |
+| v0.1.2 pill default | **`indicator.strategy=pill`** default; **PySide6** moved to core deps (no `[pill]` extra); legacy **`overlay`** / **`orb`** normalize to **`pill`**; tk overlay unwired | One install path for PyPI users; Qt dock pill is the product indicator. |
 | v0.1.2 docs | **`docs/CLI.md`** + **`docs/OVERLAY.md`**; README install (`sybl[orb]`, `sybl setup`, scriptable commands); **`docs/configuration.md`** orb keys + `ui.first_run_shown` | Workstream C completes CLI/orb user-facing docs without a separate docs site. |
 | Rebrand | **sybl** everywhere — Python package `sybl/`, CLI **`sybl`**, PyPI **`sybl`**, app id `sybl` | Prior names `navi` and `sybil`/`sybil-dictation` were taken or conflicted on PyPI; `sybl` is the canonical name. |
 

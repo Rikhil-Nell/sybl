@@ -5,7 +5,6 @@ Spawns the pill subprocess, slides it down, animates wave bars, switches to
 spinner, then slides up. Press Ctrl+C to quit early.
 
 Usage:
-    uv sync --extra orb
     uv run python scripts/show_pill.py
 """
 
@@ -23,7 +22,7 @@ def main() -> int:
     try:
         import PySide6  # noqa: F401
     except ImportError:
-        print("PySide6 not installed. Run:  uv sync --extra pill", file=sys.stderr)
+        print("PySide6 not installed. Reinstall sybl from PyPI.", file=sys.stderr)
         return 1
 
     root = Path(__file__).resolve().parents[1]

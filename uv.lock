@@ -981,6 +981,7 @@ dependencies = [
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "pynput" },
+    { name = "pyside6" },
     { name = "questionary" },
     { name = "sounddevice" },
     { name = "soundfile" },
@@ -997,12 +998,6 @@ dev = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "ruff" },
-]
-orb = [
-    { name = "pyside6" },
-]
-pill = [
-    { name = "pyside6" },
 ]
 
 [package.dev-dependencies]
@@ -1024,8 +1019,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.0.0,<3" },
     { name = "pydantic-settings", specifier = ">=2.0.0,<3" },
     { name = "pynput", specifier = ">=1.7.0,<2" },
-    { name = "pyside6", marker = "extra == 'orb'", specifier = ">=6.6,<7" },
-    { name = "pyside6", marker = "extra == 'pill'", specifier = ">=6.6,<7" },
+    { name = "pyside6", specifier = ">=6.6,<7" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0,<9" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24.0,<1" },
     { name = "questionary", specifier = ">=2.0.0,<3" },
@@ -1038,7 +1032,7 @@ requires-dist = [
     { name = "tomli-w", specifier = ">=1.0.0,<2" },
     { name = "typer", specifier = ">=0.12.0,<1" },
 ]
-provides-extras = ["orb", "pill", "dev"]
+provides-extras = ["dev"]
 
 [package.metadata.requires-dev]
 dev = [

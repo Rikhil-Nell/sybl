@@ -1,6 +1,6 @@
 [project]
 name = "sybl"
-version = "0.1.1"
+version = "0.1.2"
 description = "Open-source BYOK voice dictation — speak anywhere, transcribe fast, type it in."
 readme = "README.md"
 license = "MIT"
@@ -36,6 +36,7 @@ dependencies = [
     "tomli-w>=1.0.0,<2",
     "typer>=0.12.0,<1",
     "questionary>=2.0.0,<3",
+    "PySide6>=6.6,<7",
 ]
 
 [project.scripts]
@@ -49,12 +50,6 @@ Issues = "https://github.com/Rikhil-Nell/sybl/issues"
 Changelog = "https://github.com/Rikhil-Nell/sybl/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
-orb = [
-    "PySide6>=6.6,<7",
-]
-pill = [
-    "PySide6>=6.6,<7",
-]
 dev = [
     "keyrings.alt>=5.0.0,<6",
     "pytest>=8.0.0,<9",
