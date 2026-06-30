@@ -17,7 +17,7 @@ conventions).
 - Change the mission, scope, or product behavior → update the Mission / Product
   Spec sections.
 - Advance the project phase or status → update the Current State section and
-  `docs/ROADMAP.md`.
+  `notes/ROADMAP.md` (local, gitignored).
 - Make or reverse a technical/architecture decision → append a row/note to the
   Architecture & Tech Decisions log (append, don't erase history).
 - Add, move, or remove top-level files/directories → update the Project

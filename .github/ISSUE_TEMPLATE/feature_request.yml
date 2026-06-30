@@ -6,8 +6,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        Check [docs/ROADMAP.md](https://github.com/Rikhil-Nell/sybl/blob/main/docs/ROADMAP.md)
-        before filing — some items may already be planned.
+        Search [open issues](https://github.com/Rikhil-Nell/sybl/issues) before filing —
+        some items may already be tracked.
 
   - type: textarea
     id: problem

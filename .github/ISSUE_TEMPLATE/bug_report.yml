@@ -32,7 +32,7 @@ body:
     id: sybl_version
     attributes:
       label: sybl version
-      placeholder: "0.1.0 or git commit"
+      placeholder: "0.1.2 or git commit"
     validations:
       required: true
 

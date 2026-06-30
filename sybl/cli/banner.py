@@ -29,7 +29,10 @@ def render_banner(*, console: Console | None = None, err: bool = False) -> None:
     text = load_banner_text()
     target = console or Console(file=sys.stderr if err else sys.stdout)
     target.print(text, style="bold cyan")
-    target.print("open-source BYOK voice dictation", style="dim")
+    target.print(
+        "open-source BYOK voice dictation — speak anywhere, type it in",
+        style="dim",
+    )
 
 
 def first_run_shown() -> bool:

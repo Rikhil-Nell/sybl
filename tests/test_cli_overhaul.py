@@ -31,7 +31,7 @@ def test_help_shows_categorized_panels() -> None:
 def test_bare_sybl_shows_banner_and_help() -> None:
     result = runner.invoke(app, [])
     assert result.exit_code == 0
-    assert "sybl" in result.stdout.lower() or "____" in result.stdout
+    assert "sybl" in result.stdout.lower() or "✦" in result.stdout
     assert "Commands" in result.stdout or "start" in result.stdout
 
 

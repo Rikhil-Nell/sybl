@@ -9,9 +9,21 @@ wheels/
 # Virtual environments
 .venv
 
+# Local MCP config (API keys — copy from .cursor/mcp.json.example)
+.cursor/mcp.json
+
+# Local maintainer notes (not for the public repo)
+notes/
+.lavish/
+.tmp/
+
 # Tooling caches
 .ruff_cache/
 .pytest_cache/
 
 # Logs
 *.log
+
+# MCP / local asset scratch
+docs/assets/generated/*
+!docs/assets/generated/.gitkeep

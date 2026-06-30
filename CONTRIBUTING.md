@@ -6,7 +6,7 @@ issues, docs fixes, and PRs are welcome.
 ## Before you start
 
 - Read [AGENTS.md](AGENTS.md) for mission, architecture, and conventions.
-- Check [docs/ROADMAP.md](docs/ROADMAP.md) for what's planned vs out of scope.
+- Open a GitHub issue before large changes; check open issues for overlap.
 - Windows is the primary platform for the core loop; keep platform-specific code
   behind interfaces.
 
@@ -92,13 +92,13 @@ workflow (`.github/workflows/release.yml`).
 3. Push a tag and publish a GitHub Release — the workflow builds with `uv build`
    and uploads via OIDC (no long-lived API token required).
 
-**v0.1.1 release checklist:**
+**Release checklist (semver patch):**
 
-- [ ] All v0.1.1 items in `docs/ROADMAP.md` checked
 - [ ] `python scripts/run_tests.py` green locally
-- [ ] `CHANGELOG.md` 0.1.1 section complete
-- [ ] Bump `version` in `pyproject.toml` to `0.1.1`
-- [ ] `git tag v0.1.1` + GitHub Release → PyPI workflow
+- [ ] `CHANGELOG.md` section for the release version complete
+- [ ] Bump `version` in `pyproject.toml` and `sybl/__init__.py`
+- [ ] `git tag vX.Y.Z` + GitHub Release → PyPI workflow (`release.yml`)
+- [ ] README / docs figures still match the UI (regenerate with `scripts/generate_brand_assets.py` if needed)
 
 For local packaging smoke tests:
 

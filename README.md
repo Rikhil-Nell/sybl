@@ -1,84 +1,75 @@
 # sybl
 
-**Open-source, bring-your-own-key voice dictation.** Put your cursor anywhere, hit a
-global shortcut, speak, and sybl transcribes it fast — then types it in for you.
-
-The open-source alternative to closed dictation tools like Wispr Flow. No subscription,
-no sybl-hosted backend: your audio goes straight to the STT provider you choose.
+> Open-source BYOK voice dictation — speak anywhere, type it in.
 
 [![CI](https://github.com/Rikhil-Nell/sybl/actions/workflows/ci.yml/badge.svg)](https://github.com/Rikhil-Nell/sybl/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![PyPI version](https://img.shields.io/pypi/v/sybl.svg)](https://pypi.org/project/sybl/)
 
+![sybl mission-control TUI](docs/assets/tui-dashboard.png)
+
+**sybl** is a background voice dictation daemon for Windows. Put your cursor in
+any text field, hit a global hotkey, speak, and sybl transcribes with your own
+Groq or Deepgram API key and pastes the result where you were typing.
+
+Audio goes straight from your machine to the STT provider you configure. sybl
+does not host a backend, store transcripts in the cloud, or run telemetry.
+
 ## Features
 
-- **Wispr-style hotkeys** — hold for push-to-talk *or* double-press for hands-free
-  toggle on the same binding (default **`both`** mode)
-- **BYOK STT** — Groq Whisper (batch) and Deepgram (streaming) today; pluggable providers
-- **Background daemon** — `sybl start` returns immediately; `sybl tui` for logs and settings
-- **Types where you were focused** — clipboard-paste injection on Windows
-- **Listening indicator** — Qt dock pill at top-center (Windows; bundled with install)
-- **Sound cues** — built-in chime or custom `start.wav` / `stop.wav` in your config folder
-- **Custom vocabulary** — STT hints for names and jargon via `sybl config vocab`
-- **Voice commands** — `new line`, `period`, `comma` in final transcripts
-- **Local-first** — no telemetry; API keys in the OS keyring
-
-## Install
-
-```powershell
-pipx install sybl
-```
-
-Or with [uv](https://docs.astral.sh/uv/):
-
-```powershell
-uv tool install sybl
-```
-
-Requires **Python 3.12+**. Windows is the primary supported platform for the full
-core loop (hotkeys, injection, listening pill).
-
-First install pulls ~45 Python packages (numpy, textual, STT SDKs, etc.) — expect
-1–3 minutes on a cold `pipx install`; upgrades are faster.
+- **Global hotkey** — works in whatever app had focus when you activated
+- **Push-to-talk and toggle** — hold to speak, or double-press for hands-free;
+  both on the same binding by default
+- **BYOK providers** — Groq (Whisper batch) and Deepgram (streaming + batch);
+  add your key once via the OS keyring
+- **Text injection** — clipboard paste into the target field; prior clipboard
+  restored after
+- **Dock listening pill** — wave bars, timer, and transcribing state at the top
+  of the screen while you dictate
+- **Mission-control TUI** — live status, session details, transcript history,
+  logs, and settings over IPC (`sybl tui`)
+- **Post-processing** — whitespace trim, filler trim, capitalization; optional
+  punctuation
+- **Vocabulary hints** — names and jargon sent to the provider at session start
+- **Voice commands** — `new line`, `period`, `comma` on the final transcript
+- **Scriptable CLI** — `start`, `stop`, `status`, `transcribe`, `doctor`,
+  `config`, JSON output where it helps automation
 
 ## Quick start
 
 ```powershell
-sybl setup                # interactive first-run wizard (TTY)
-sybl doctor
-sybl config init          # creates config.toml + sounds/ folder
-sybl config set-key groq
-sybl start                # background daemon
-sybl tui                  # optional — logs, history, settings
+uv tool install sybl
+sybl setup
+sybl start
+sybl tui                      # optional dashboard
 ```
 
-Scriptable helpers: `sybl status --json`, `sybl providers`, `sybl config get/set`,
-`sybl restart`, `sybl logs --follow`. See [CLI reference](docs/CLI.md).
+Default hotkey: **Ctrl+Alt+Space**. Hold ~200 ms for push-to-talk, or
+double-press for toggle. **Esc** cancels while listening.
 
-**Hold** **Ctrl+Alt+Space** (~200ms) for push-to-talk, or **double-press** for toggle.
-Press **Esc** while listening to cancel. Stop the daemon with `sybl stop`.
+**[Full user guide →](docs/guide.md)** — providers, config, CLI reference,
+permissions, troubleshooting.
 
-See [Getting started](docs/getting-started.md) for the full walkthrough.
-
-## Documentation
-
-| Doc | Description |
+| | |
 | --- | --- |
-| [Getting started](docs/getting-started.md) | Install, first run, daemon + TUI |
-| [CLI reference](docs/CLI.md) | Categorized commands, `--json`, wizards, exit codes |
-| [Providers](docs/providers.md) | Groq & Deepgram BYOK setup |
-| [Configuration](docs/configuration.md) | `config.toml` reference |
-| [Overlay indicator](docs/OVERLAY.md) | Qt listening pill |
-| [Permissions](docs/permissions.md) | Microphone and injection notes |
-| [Development](docs/DEVELOPMENT.md) | Local dev, phases, integration tests |
-| [Roadmap](docs/ROADMAP.md) | What's built and what's next |
-| [Daemon architecture](docs/DAEMON.md) | IPC and process model |
+| Listening pill | ![pill](docs/assets/listening-pill.png) |
+
+## Platform status
+
+| | Windows | macOS / Linux |
+| --- | --- | --- |
+| Hotkeys | Yes | Planned |
+| Text injection | Yes | Planned |
+| Listening pill | Yes | Planned |
+| Daemon + TUI + CLI | Yes | Yes |
+
+Windows is the primary target for the full dictation loop. Other platforms can
+run the daemon and CLI today; hotkeys, injection, and the pill land in v0.2.0.
 
 ## Contributing
 
-Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md)
-for architecture and conventions.
+[CONTRIBUTING.md](CONTRIBUTING.md) · [AGENTS.md](AGENTS.md) · [CHANGELOG.md](CHANGELOG.md)
 
 ## License
 

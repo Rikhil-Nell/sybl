@@ -1,7 +1,7 @@
 # AGENTS.md
 
 > Living source of truth for the sybl project. Read this first. Keep it current.
-> Last updated: 2026-06-29 (v0.1.2 release)
+> Last updated: 2026-06-30 (docs consolidated — public `docs/guide.md` only)
 
 ---
 
@@ -35,7 +35,7 @@ The guiding principles:
   - Default **`both`** mode enables PTT and toggle together (Wispr-style).
 - **Popup capture surface.** When activated, a small **Qt dock pill** appears at the
   top center of the screen (Windows). Set `indicator.strategy = "none"` to disable.
-  See `docs/OVERLAY.md` and `sybl/indicator/pill_qt/`.
+  See `sybl/indicator/pill_qt/`. User-facing docs: `docs/guide.md`.
 - **BYOK transcription.** Audio is streamed/sent to the user's selected provider
   and transcribed quickly.
 - **Text injection.** The transcript is inserted at the current cursor location
@@ -50,8 +50,9 @@ The guiding principles:
 - **Phase:** **v0.1.2 released** — mission-control TUI (Sibyl Royal theme, hero/live
  bands, config editor, `e` / `sybl config edit`), scriptable CLI overhaul, **Qt dock
  listening pill** at top-center (PySide6 bundled; default indicator on Windows).
-- **Next:** v0.1.x polish (onboarding wizard, log filter, README screenshots).
-  **v0.2.0** — new providers, macOS/Linux backends. See `docs/ROADMAP.md`.
+- **Next:** v0.1.x polish — TUI onboarding wizard, log level filter. **v0.2.0** —
+  new providers, macOS/Linux backends. Detailed roadmap: `notes/ROADMAP.md` (local,
+  gitignored).
 - **Code:** `sybl/audio/` implements `AudioCaptureSession` (sounddevice callback →
   asyncio queue, 16 kHz mono int16, resampling, dBFS peak metering, debug WAV save).
   `sybl/providers/` implements streaming-first STT interface, `ProviderCapabilities`,
@@ -79,7 +80,7 @@ The guiding principles:
   `sybl start` detaches by default; `--foreground` blocks for debug.
 - **Stack pinned:** `typer`, `pydantic`, `platformdirs`, `keyring`, `tomli-w`,
   `sounddevice`, `numpy`, `soundfile`, `soxr`, `groq`, `tenacity`, `deepgram-sdk`,
-  `pynput`, `textual`, `questionary`; dev: `ruff`, `pytest`, `pytest-asyncio`.
+  `pynput`, `textual`, `questionary`, `PySide6`; dev: `ruff`, `pytest`, `pytest-asyncio`.
 - **Primary platform:** Windows first (dev machine). Code stays cross-platform
   behind interfaces, but the core loop is proven on Windows before expanding.
 - **Open questions:** per-platform overlay beyond Windows; text-injection
@@ -141,7 +142,7 @@ The guiding principles:
 | v0.1.2 CLI overhaul | **Scriptable-first CLI** — Rich help panels (Daemon/Dictation/Configuration/Diagnostics); global `--no-input`; stable exit codes; `--json` on `status`/`doctor`/`config show`/`providers`; `config get`/`set` dotted paths; `restart`/`logs`; `sybl setup` + interactive `config set-key` wizards (`questionary`); ASCII banner asset + `ui.first_run_shown` | Hermes-style agent surface without removing TUI; wizards TTY-gated; first-run banner to stderr so `--json` stdout stays clean. |
 | v0.1.2 orb indicator | **`indicator.strategy=orb`** — separate **WebView2/pywebview** overlay process (`python -m sybl.indicator.orb_web`); stdin **NDJSON** commands; HTML/CSS glass frame + WebGL dual-color fluid shader; **`WebViewOrbIndicator`** wrapper; fallback tk → no-op; optional extra **`sybl[orb]`** (`pywebview>=5.4,<6`); system **WebView2 Runtime** on Windows | Replaced PySide6/Qt QML orb (shader compile pain, cartoon bubble fallback); WebView enables glassmorphism + faster shader iteration; default strategy stays `overlay`. |
 | v0.1.2 pill rename | **`indicator.strategy=pill`** (legacy **`orb`** normalizes via validator); optional extra **`sybl[pill]`**; **`sybl[orb]`** kept as alias extra; default **`anchor=top_center`** for dock pill | No longer an orb visually or in naming; backward compat for existing configs. |
-| v0.1.2 pill default | **`indicator.strategy=pill`** default; **PySide6** moved to core deps (no `[pill]` extra); legacy **`overlay`** / **`orb`** normalize to **`pill`**; tk overlay unwired | One install path for PyPI users; Qt dock pill is the product indicator. |
+| v0.1.3 docs | **Single public doc** — `docs/guide.md` only; maintainer depth in gitignored **`notes/`** (roadmap, design, brand, daemon, research); slim README landing | Less doc sprawl for users; planning stays local. |
 | v0.1.2 docs | **`docs/CLI.md`** + **`docs/OVERLAY.md`**; README install (`sybl[orb]`, `sybl setup`, scriptable commands); **`docs/configuration.md`** orb keys + `ui.first_run_shown` | Workstream C completes CLI/orb user-facing docs without a separate docs site. |
 | Rebrand | **sybl** everywhere — Python package `sybl/`, CLI **`sybl`**, PyPI **`sybl`**, app id `sybl` | Prior names `navi` and `sybil`/`sybil-dictation` were taken or conflicted on PyPI; `sybl` is the canonical name. |
 
@@ -192,19 +193,10 @@ sybl/
 │   └── workflows/          # ci.yml, release.yml
 ├── .githooks/              # optional commit-msg hook (no Cursor co-author)
 ├── docs/
-│   ├── getting-started.md
-│   ├── CLI.md
-│   ├── OVERLAY.md
-│   ├── providers.md
-│   ├── configuration.md
-│   ├── permissions.md
-│   ├── DEVELOPMENT.md
-│   ├── DAEMON.md
-│   ├── POPUP-SPIKE.md
-│   ├── ROADMAP.md
-│   ├── DESIGN-v0.1.2.md
-│   └── RESEARCH-NOTES.md
-├── scripts/               # run_tests.py, check_unixisms.py
+│   ├── guide.md           # sole public user doc
+│   └── assets/            # README screenshots (PNG)
+├── notes/                 # gitignored — local roadmap, design, brand (see notes/README.md)
+├── scripts/               # run_tests.py, check_unixisms.py, generate_brand_assets.py
 ├── main.py                # legacy redirect to CLI
 ├── pyproject.toml
 ├── tests/
@@ -221,7 +213,7 @@ sybl/
 │   ├── test_history.py
 │   ├── test_hotkeys.py
 │   ├── test_indicator.py
-│   ├── test_indicator_orb.py
+│   ├── test_indicator_pill.py
 │   ├── test_indicator_sound.py
 │   ├── test_inject.py
 │   ├── test_ipc_protocol.py
@@ -253,7 +245,7 @@ sybl/
     ├── providers/         # STT interface, capabilities, manager, Groq, Deepgram
     ├── hotkeys/           # HotkeyManager, bindings, pynput backend, focus capture
     ├── inject/            # TextInjector, Windows clipboard-paste injection
-    ├── indicator/         # CaptureIndicator, NoOp, tk overlay, Qt pill subprocess
+    ├── indicator/         # CaptureIndicator, NoOp, Qt pill subprocess
     │   ├── pill_qt/       # QML dock pill overlay (host.py, Pill.qml)
     │   ├── pill_qt_win.py # QtPillIndicator wrapper (stdin NDJSON)
     │   └── protocol.py    # NDJSON command protocol
@@ -330,7 +322,7 @@ same task — do not defer it.
 Update `AGENTS.md` whenever you:
 
 - Change the mission, scope, or product behavior → update §1/§2.
-- Advance the project's phase or status → update §3 (and `docs/ROADMAP.md`).
+- Advance the project's phase or status → update §3 (and `notes/ROADMAP.md` locally).
 - Make or reverse a technical/architecture decision → append to §4.
 - Add, move, or remove top-level files/directories → update §5.
 - Establish or change a convention → update §6.
@@ -340,8 +332,8 @@ Rules:
 1. **Bump `Last updated`** at the top whenever you edit this file.
 2. **Append, don't erase** decisions in §4 — if a decision changes, add a new
    row/note explaining the change rather than deleting the old one.
-3. **Keep it concise.** This is a map, not a manual. Link out to `docs/` for
-   depth.
+3. **Keep it concise.** This is a map, not a manual. Public user docs: `docs/guide.md`.
+   Maintainer depth: gitignored `notes/`.
 4. **If reality and this file disagree, this file is wrong — fix it.**
 5. When you finish a unit of work, ask yourself: *"Did anything here go stale?"*
    If yes, update it before ending your turn.

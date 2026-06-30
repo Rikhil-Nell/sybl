@@ -21,7 +21,7 @@ def _format_uptime(seconds: float | None) -> str:
 
 
 class ChromeBar(Horizontal):
-    """Identity row: ``✦ sybl  ● live  idle … v0.1.1 · up 2h14m · 38 today``."""
+    """Identity row: ``✦ sybl  ● live  idle … v0.1.2 · up 2h14m · 38 today``."""
 
     def compose(self) -> ComposeResult:
         yield Static("✦", id="chrome-logo")

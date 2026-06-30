@@ -1,5 +1,5 @@
 /* Sibyl Royal — flat regal blue + gold, no gradients.
-   Palette (mirrors docs/DESIGN-v0.1.2.md + the mission-control mock):
+   Palette (mirrors notes/DESIGN-v0.1.2.md + the mission-control mock):
      bg-base #080e1a  bg-panel #0c1633  bg-panel-2 #102040  row-sel #15264a
      border #1e3a6e   border-dim #152a52
      text #e8e4d9  text-dim #9aa6c0  muted #6b7a99
