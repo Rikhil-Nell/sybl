@@ -43,6 +43,23 @@ async def test_state_changed_shows_and_hides_indicator() -> None:
 
 
 @pytest.mark.asyncio
+async def test_state_changed_processing_keeps_indicator_visible() -> None:
+    mock_indicator = MagicMock()
+    with ExitStack() as stack:
+        _enter_daemon_patches(stack, mock_indicator)
+        from sybl.core.daemon import SyblDaemon
+
+        daemon = SyblDaemon()
+        await daemon._on_state_changed(SessionState.LISTENING)
+        await daemon._on_state_changed(SessionState.PROCESSING)
+        mock_indicator.hide.assert_not_called()
+        mock_indicator.set_phase.assert_called_once_with("processing")
+        await daemon._on_state_changed(SessionState.IDLE)
+        mock_indicator.hide.assert_called_once()
+        await daemon.shutdown()
+
+
+@pytest.mark.asyncio
 async def test_poll_levels_updates_indicator() -> None:
     mock_indicator = MagicMock()
     mock_controller = MagicMock()

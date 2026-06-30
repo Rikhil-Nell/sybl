@@ -103,14 +103,31 @@ class IpcConfig(BaseModel):
 
 class UiConfig(BaseModel):
     onboarding_complete: bool = False
+    first_run_shown: bool = False
+
+
+IndicatorAnchor = Literal[
+    "top_center",
+    "top_right",
+    "top_left",
+    "bottom_right",
+    "bottom_left",
+    "cursor",
+]
 
 
 class IndicatorConfig(BaseModel):
     enabled: bool = True
-    strategy: Literal["overlay", "none"] = "overlay"
-    size_px: int = 48
+    strategy: Literal["overlay", "none", "pill"] = "overlay"
+    size_px: int = 72
     offset_x: int = 16
     offset_y: int = 16
+    anchor: IndicatorAnchor = "top_center"
+    margin_px: int = Field(default=0, ge=0, le=256)
+    orb_accent: str = "#7b2ff7"
+    orb_accent_secondary: str = "#f97316"
+    orb_idle_opacity: float = Field(default=0.55, ge=0.0, le=1.0)
+    orb_fps: int = Field(default=30, ge=15, le=60)
     sound_enabled: bool = False
     sound_on_start: bool = True
     sound_on_stop: bool = True
@@ -123,6 +140,13 @@ class IndicatorConfig(BaseModel):
         le=2.0,
         description="Max cue length; longer WAV files are trimmed automatically",
     )
+
+    @field_validator("strategy", mode="before")
+    @classmethod
+    def normalize_strategy(cls, value: object) -> object:
+        if value == "orb":
+            return "pill"
+        return value
 
 
 class SyblConfig(BaseModel):

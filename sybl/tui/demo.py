@@ -14,6 +14,8 @@ from collections.abc import AsyncIterator
 from datetime import datetime
 from typing import Any
 
+from sybl.config import ConfigManager
+
 _SAMPLE_TRANSCRIPTS = [
     "Meeting notes for the v0.1.2 TUI overhaul.",
     "Push back on scope creep and keep the core loop small.",
@@ -69,19 +71,11 @@ class DemoIpcClient:
         }
 
     async def get_config(self) -> dict[str, Any]:
-        return {
-            "ui": {"onboarding_complete": True},
-            "provider": {"preferred": "deepgram", "fallback": ["groq"]},
-            "hotkey": {
-                "mode": "both",
-                "binding": "ctrl+alt+space",
-                "cancel_binding": "esc",
-                "toggle_double_press_ms": 400,
-                "ptt_hold_ms": 200,
-                "streaming": "auto",
-                "min_duration_ms": 250,
-            },
-        }
+        data = ConfigManager().load().model_dump(mode="json")
+        ui = data.setdefault("ui", {})
+        if not ui.get("onboarding_complete"):
+            ui["onboarding_complete"] = True
+        return data
 
     async def patch_config(self, patch: dict[str, Any]) -> dict[str, Any]:
         return await self.get_config()

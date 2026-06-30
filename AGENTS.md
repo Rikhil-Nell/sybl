@@ -1,7 +1,7 @@
 # AGENTS.md
 
 > Living source of truth for the sybl project. Read this first. Keep it current.
-> Last updated: 2026-06-29 (v0.1.2 settings editor rework; `sybl config edit` + `e` binding)
+> Last updated: 2026-06-29 (pill multi-monitor positioning + flush notch layout)
 
 ---
 
@@ -33,9 +33,10 @@ The guiding principles:
   - **Toggle / constant recording:** a double-press of the shortcut starts
     continuous recording; press again to stop.
   - Default **`both`** mode enables PTT and toggle together (Wispr-style).
-- **Popup capture surface.** When activated, a small on-screen pill appears near the
-  cursor so the user knows sybl is listening (Windows tkinter overlay MVP; see
-  `docs/POPUP-SPIKE.md`).
+- **Popup capture surface.** When activated, a small on-screen indicator appears while
+  listening — default **tkinter pill** near the cursor (Windows), or opt-in **Qt dock
+  pill** (`indicator.strategy = "pill"`, `sybl[pill]` / PySide6); see
+  `docs/OVERLAY.md` and `sybl/indicator/pill_qt/`.
 - **BYOK transcription.** Audio is streamed/sent to the user's selected provider
   and transcribed quickly.
 - **Text injection.** The transcript is inserted at the current cursor location
@@ -57,9 +58,9 @@ The guiding principles:
  description, labeled forms, and sized sound-cue rows. Config file can be opened
  in `$EDITOR` from the dashboard (`e`) or `sybl config edit`; both reload the
  running daemon. Help overlay. v0.1.1 core loop unchanged.
-- **Next releases:** **v0.1.2 polish** — onboarding wizard, log level filter,
-  README screenshots. **v0.2.0** — new providers, macOS/Linux backends, native
-  helpers. See `docs/ROADMAP.md`.
+- **Next releases:** **v0.1.2 polish** — README screenshots, log level filter.
+  **v0.2.0** — new providers, macOS/Linux backends, native helpers. See
+  `docs/ROADMAP.md`.
 - **Code:** `sybl/audio/` implements `AudioCaptureSession` (sounddevice callback →
   asyncio queue, 16 kHz mono int16, resampling, dBFS peak metering, debug WAV save).
   `sybl/providers/` implements streaming-first STT interface, `ProviderCapabilities`,
@@ -75,15 +76,19 @@ The guiding principles:
  zone widgets `ChromeBar`/`ContextStrip`/`HeroBand`/`SessionPane`/`TranscriptList`/`LogBand`/`LiveBand`/`KeyFooter`;
  sidebar settings config-editor modal, help overlay, BYOK onboarding). `sybl/config/edit.py`
  resolves `$VISUAL`/`$EDITOR` (per-OS fallback) and opens the config file. `sybl/indicator/` implements
-  `CaptureIndicator` (NoOp + Windows tkinter overlay near cursor with RMS level bar).
-  CLI: `sybl start`, `sybl stop`, `sybl status`, `sybl tui` (`--demo` runs the
- dashboard with scripted sample data, no daemon — for screenshots/previews), `sybl config`
- (incl. `config edit` to open + reload), `sybl config vocab`, `sybl doctor`, `sybl audio`,
- `sybl transcribe`, `sybl hotkey test`.
+  `CaptureIndicator` (NoOp + Windows tkinter overlay + optional **Qt dock pill**
+  subprocess behind `QtPillIndicator`; `strategy=pill` needs `sybl[pill]` / PySide6).
+  CLI: Hermes-style categorized help (Daemon / Dictation / Configuration /
+ Diagnostics); global `--no-input`; stable exit codes; `--json` on `status`,
+ `doctor`, `config show`, `providers`; `config get`/`set` dotted paths;
+ `sybl setup` first-run wizard (`questionary`); `restart`, `logs`; ASCII banner
+ on bare `sybl` + first run (`ui.first_run_shown`). Existing: `start`, `stop`,
+ `status`, `tui` (`--demo`), `config` (incl. `edit`, `vocab`), `doctor`, `audio`,
+ `transcribe`, `hotkey test`.
   `sybl start` detaches by default; `--foreground` blocks for debug.
 - **Stack pinned:** `typer`, `pydantic`, `platformdirs`, `keyring`, `tomli-w`,
   `sounddevice`, `numpy`, `soundfile`, `soxr`, `groq`, `tenacity`, `deepgram-sdk`,
-  `pynput`, `textual`; dev: `ruff`, `pytest`, `pytest-asyncio`.
+  `pynput`, `textual`, `questionary`; dev: `ruff`, `pytest`, `pytest-asyncio`.
 - **Primary platform:** Windows first (dev machine). Code stays cross-platform
   behind interfaces, but the core loop is proven on Windows before expanding.
 - **Open questions:** per-platform overlay beyond Windows; text-injection
@@ -142,6 +147,11 @@ The guiding principles:
 | v0.1.2 settings | Settings modal rebuilt as a **config editor**: fixed-width section rail (the old CSS targeted a non-existent `#settings-nav`, so the list grabbed half the modal), per-section heading + description, labeled forms, and one-line sound-cue rows (wide select + compact buttons) | Fixes the "haphazard / oversized sidebar" UI; reads as a real form, not a default template. |
 | v0.1.2 config edit | **`sybl config edit`** + dashboard **`e`** open the config file in `$VISUAL`/`$EDITOR` (`sybl/config/edit.py`), then push the reloaded file to the running daemon via `PATCH_CONFIG` (full dump) | Lets power users hand-edit TOML without leaving the workflow; daemon stays the source of truth (no drift), reusing the existing patch/deep-merge path. |
 | v0.1.2 CLI audit | **No commands deprecated.** CLI = scriptable/headless/diagnostic surface (`audio`, `transcribe`, `hotkey test`, `doctor`, `config show/keys`); TUI = interactive surface. They are complementary, not redundant | Per the footprint ladder, added one CLI command (`config edit`) rather than growing the core; kept diagnostics that the TUI does not replace. |
+| v0.1.2 CLI overhaul | **Scriptable-first CLI** — Rich help panels (Daemon/Dictation/Configuration/Diagnostics); global `--no-input`; stable exit codes; `--json` on `status`/`doctor`/`config show`/`providers`; `config get`/`set` dotted paths; `restart`/`logs`; `sybl setup` + interactive `config set-key` wizards (`questionary`); ASCII banner asset + `ui.first_run_shown` | Hermes-style agent surface without removing TUI; wizards TTY-gated; first-run banner to stderr so `--json` stdout stays clean. |
+| v0.1.2 orb indicator | **`indicator.strategy=orb`** — separate **WebView2/pywebview** overlay process (`python -m sybl.indicator.orb_web`); stdin **NDJSON** commands; HTML/CSS glass frame + WebGL dual-color fluid shader; **`WebViewOrbIndicator`** wrapper; fallback tk → no-op; optional extra **`sybl[orb]`** (`pywebview>=5.4,<6`); system **WebView2 Runtime** on Windows | Replaced PySide6/Qt QML orb (shader compile pain, cartoon bubble fallback); WebView enables glassmorphism + faster shader iteration; default strategy stays `overlay`. |
+| v0.1.2 pill rename | **`indicator.strategy=pill`** (legacy **`orb`** normalizes via validator); optional extra **`sybl[pill]`**; **`sybl[orb]`** kept as alias extra; default **`anchor=top_center`** for dock pill | No longer an orb visually or in naming; backward compat for existing configs. |
+| v0.1.2 pill layout | Qt pill positions via **`QGuiApplication.screenAt(QCursor.pos())`** + **`QScreen.availableGeometry()`** (not Win32 physical pixels); default **`margin_px=0`** flush to work-area top; QML left-aligned content + square top / rounded bottom (notch silhouette) | Fixes multi-monitor/DPI off-center placement; mac-style dock attach. |
+| v0.1.2 docs | **`docs/CLI.md`** + **`docs/OVERLAY.md`**; README install (`sybl[orb]`, `sybl setup`, scriptable commands); **`docs/configuration.md`** orb keys + `ui.first_run_shown` | Workstream C completes CLI/orb user-facing docs without a separate docs site. |
 | Rebrand | **sybl** everywhere — Python package `sybl/`, CLI **`sybl`**, PyPI **`sybl`**, app id `sybl` | Prior names `navi` and `sybil`/`sybil-dictation` were taken or conflicted on PyPI; `sybl` is the canonical name. |
 
 High-level component map:
@@ -192,6 +202,8 @@ sybl/
 ├── .githooks/              # optional commit-msg hook (no Cursor co-author)
 ├── docs/
 │   ├── getting-started.md
+│   ├── CLI.md
+│   ├── OVERLAY.md
 │   ├── providers.md
 │   ├── configuration.md
 │   ├── permissions.md
@@ -209,6 +221,7 @@ sybl/
 │   ├── test_audio.py
 │   ├── test_bindings.py
 │   ├── test_cli.py
+│   ├── test_cli_overhaul.py
 │   ├── test_config.py
 │   ├── test_deepgram.py
 │   ├── test_dictation.py
@@ -217,6 +230,7 @@ sybl/
 │   ├── test_history.py
 │   ├── test_hotkeys.py
 │   ├── test_indicator.py
+│   ├── test_indicator_orb.py
 │   ├── test_indicator_sound.py
 │   ├── test_inject.py
 │   ├── test_ipc_protocol.py
@@ -237,8 +251,9 @@ sybl/
 └── sybl/
     ├── __init__.py
     ├── __main__.py
-    ├── cli/               # start, stop, status, tui, config, doctor, audio, transcribe, hotkey
-    ├── config/            # Pydantic models, paths, ConfigManager, vocabulary store, editor open
+    ├── cli/               # CLI: banner, exit codes, wizards; start/stop/restart/logs/status/tui/setup/providers/config/doctor/audio/transcribe/hotkey
+    │   └── assets/        # banner.txt (ASCII art)
+    ├── config/            # Pydantic models, paths, ConfigManager, access (dotted get/set), vocabulary, editor
     ├── secrets/           # keyring wrapper
     ├── logging/           # setup + RingBufferHandler
     ├── ipc/               # NDJSON command/event servers + client
@@ -247,7 +262,10 @@ sybl/
     ├── providers/         # STT interface, capabilities, manager, Groq, Deepgram
     ├── hotkeys/           # HotkeyManager, bindings, pynput backend, focus capture
     ├── inject/            # TextInjector, Windows clipboard-paste injection
-    ├── indicator/         # CaptureIndicator, NoOp, Windows tkinter overlay
+    ├── indicator/         # CaptureIndicator, NoOp, tk overlay, Qt pill subprocess
+    │   ├── pill_qt/       # QML dock pill overlay (host.py, Pill.qml)
+    │   ├── pill_qt_win.py # QtPillIndicator wrapper (stdin NDJSON)
+    │   └── protocol.py    # NDJSON command protocol
     ├── daemon/            # Background spawn helpers
     └── tui/               # Textual client (theme, widgets, dashboard, settings, help, onboarding)
         ├── theme/         # sibyl_royal.tcss

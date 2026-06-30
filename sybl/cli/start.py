@@ -8,6 +8,7 @@ import sys
 import typer
 
 from sybl import __version__
+from sybl.cli import exit_codes
 from sybl.config import ConfigManager, log_path
 from sybl.config.paths import sounds_dir
 from sybl.core.daemon import SyblDaemon
@@ -41,7 +42,7 @@ def _hotkey_help_lines(config) -> list[str]:
 
 
 def register(app: typer.Typer) -> None:
-    @app.command("start")
+    @app.command("start", rich_help_panel="Daemon")
     def start_command(
         ctx: typer.Context,
         foreground: bool = typer.Option(
@@ -92,10 +93,10 @@ def register(app: typer.Typer) -> None:
                 asyncio.run(_run_daemon(verbose=verbose))
             except DaemonAlreadyRunningError as exc:
                 typer.echo(str(exc), err=True)
-                raise typer.Exit(code=1) from exc
+                raise typer.Exit(code=exit_codes.DAEMON_NOT_RUNNING) from exc
             except NotImplementedError as exc:
                 typer.echo(str(exc), err=True)
-                raise typer.Exit(code=1) from exc
+                raise typer.Exit(code=exit_codes.GENERAL_ERROR) from exc
             return
 
         try:
@@ -104,13 +105,13 @@ def register(app: typer.Typer) -> None:
                     "sybl daemon is already running. Use `sybl status` or `sybl stop`.",
                     err=True,
                 )
-                raise typer.Exit(code=1)
+                raise typer.Exit(code=exit_codes.DAEMON_NOT_RUNNING)
             spawn_background_daemon(verbose=verbose)
             pid = wait_for_daemon_ready()
         except TimeoutError as exc:
             typer.echo(str(exc), err=True)
             typer.echo(f"Check the log file: {log_path()}", err=True)
-            raise typer.Exit(code=1) from exc
+            raise typer.Exit(code=exit_codes.GENERAL_ERROR) from exc
 
         typer.echo(f"Daemon running in background (pid={pid}).")
         typer.echo("View logs and settings: sybl tui")

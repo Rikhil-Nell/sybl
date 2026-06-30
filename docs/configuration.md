@@ -124,16 +124,23 @@ Supported phrases: `new line` / `newline`, `period`, `comma`.
 | Key | Default | Description |
 | --- | --- | --- |
 | `onboarding_complete` | `false` | BYOK wizard shown until true |
+| `first_run_shown` | `false` | ASCII CLI banner shown once until true |
 
 ## `[indicator]`
 
 | Key | Default | Description |
 | --- | --- | --- |
-| `enabled` | `true` | Show listening pill while dictating |
-| `strategy` | `"overlay"` | `"overlay"` or `"none"` |
-| `size_px` | `48` | Pill size (pixels) |
-| `offset_x` | `16` | Offset from cursor |
-| `offset_y` | `16` | Offset from cursor |
+| `enabled` | `true` | Show listening indicator while dictating |
+| `strategy` | `"overlay"` | `"overlay"` (tk pill), `"pill"` (Qt dock pill, Windows), or `"none"`. Legacy `"orb"` → `"pill"`. |
+| `size_px` | `72` | Reserved for future pill sizing (pixels) |
+| `offset_x` | `16` | Horizontal offset from cursor (tk `overlay` + `anchor=cursor`) |
+| `offset_y` | `16` | Vertical offset from cursor (tk `overlay` + `anchor=cursor`) |
+| `anchor` | `"top_center"` | Screen anchor: `top_center` (dock pill), `top_right`, `top_left`, `bottom_right`, `bottom_left`, `cursor` |
+| `margin_px` | `0` | Margin from top work-area edge for dock pill (0–256) |
+| `orb_accent` | `"#7b2ff7"` | Primary wave color (hex, purple) |
+| `orb_accent_secondary` | `"#f97316"` | Secondary wave color (hex, orange) |
+| `orb_idle_opacity` | `0.55` | Reserved for future idle styling (0.0–1.0) |
+| `orb_fps` | `30` | Animation frame rate (15–60) |
 | `sound_enabled` | `false` | Two-note chime on listen start/stop (cross-platform) |
 | `sound_on_start` | `true` | Play cue when listening begins |
 | `sound_on_stop` | `true` | Play cue when listening ends |
@@ -163,15 +170,42 @@ to edit them down first. Override filenames with `sound_start_file` / `sound_sto
 **TUI:** `sybl tui` → Settings (`s`) — toggle sound, set volume, browse or paste a path
 to import WAV files, or pick **Built-in chime** per cue.
 
-On non-Windows platforms the overlay degrades to a no-op.
+On non-Windows platforms the tk `overlay` strategy degrades to a no-op. The optional
+**pill** strategy (`sybl[pill]`, PySide6 on Windows) has its own fallback chain — see
+[OVERLAY.md](OVERLAY.md).
+
+Example — enable the glass orb:
+
+```toml
+[indicator]
+strategy = "orb"
+anchor = "top_right"
+margin_px = 24
+orb_accent = "#7b2ff7"
+orb_accent_secondary = "#f97316"
+```
+
+Or via CLI:
+
+```powershell
+sybl config set indicator.strategy orb
+```
 
 ## CLI config commands
 
 ```powershell
 sybl config init
 sybl config show
+sybl config show --json
+sybl config get <dotted.path>
+sybl config set <dotted.path> <value>
+sybl config edit
 sybl config set-key <provider>
+sybl config keys
 sybl config vocab add|list|remove <term>
 ```
 
-Changes made through the TUI are routed through the daemon so config stays authoritative.
+See [CLI.md](CLI.md) for the full command reference, `--json` outputs, and exit codes.
+
+Changes made through the TUI or `config set` (while the daemon runs) are routed through
+the daemon so config stays authoritative.

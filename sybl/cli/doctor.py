@@ -11,6 +11,7 @@ from pathlib import Path
 import keyring
 import typer
 
+from sybl.cli import exit_codes
 from sybl.config import ConfigError, ConfigManager, config_dir, state_dir
 from sybl.secrets import get_provider_key
 
@@ -30,17 +31,42 @@ class CheckResult:
 
 
 def register(app: typer.Typer) -> None:
-    @app.command("doctor")
+    @app.command("doctor", rich_help_panel="Diagnostics")
     def doctor_command(
         live: bool = typer.Option(
             False,
             "--live",
             help="Run network, mic, and inject probes (slower; needs keys/mic).",
         ),
+        json_output: bool = typer.Option(
+            False,
+            "--json",
+            help="Emit machine-readable JSON.",
+        ),
     ) -> None:
         """Run environment and dependency checks."""
         results = run_checks(live=live)
         has_failure = False
+
+        if json_output:
+            import json
+
+            payload = {
+                "checks": [
+                    {
+                        "name": result.name,
+                        "status": result.status.value,
+                        "detail": result.detail,
+                        "remediation": result.remediation,
+                    }
+                    for result in results
+                ],
+                "ok": all(result.status != CheckStatus.FAIL for result in results),
+            }
+            typer.echo(json.dumps(payload, indent=2))
+            if not payload["ok"]:
+                raise typer.Exit(code=exit_codes.GENERAL_ERROR)
+            return
 
         for result in results:
             typer.echo(f"[{result.status.value}] {result.name}: {result.detail}")
@@ -50,7 +76,7 @@ def register(app: typer.Typer) -> None:
                 has_failure = True
 
         if has_failure:
-            raise typer.Exit(code=1)
+            raise typer.Exit(code=exit_codes.GENERAL_ERROR)
 
 
 def run_checks(*, live: bool = False) -> list[CheckResult]:
@@ -664,6 +690,38 @@ def _check_indicator(config) -> list[CheckResult]:
     sound_note = ""
     if indicator.sound_enabled:
         sound_note = "; sound cue enabled"
+
+    if indicator.strategy == "pill":
+        results: list[CheckResult] = []
+        from sybl.indicator import qt_available
+
+        if qt_available():
+            results.append(
+                CheckResult(
+                    "Capture indicator (pill)",
+                    CheckStatus.PASS,
+                    f"PySide6 available (Qt dock pill){sound_note}",
+                )
+            )
+        else:
+            results.append(
+                CheckResult(
+                    "Capture indicator (pill)",
+                    CheckStatus.FAIL,
+                    "PySide6 not installed",
+                    remediation="Install optional extra: uv sync --extra pill",
+                )
+            )
+
+        if sys.platform != "win32":
+            results.append(
+                CheckResult(
+                    "Qt pill overlay",
+                    CheckStatus.WARN,
+                    "Windows-only in this release",
+                )
+            )
+        return results
 
     if sys.platform != "win32":
         return [

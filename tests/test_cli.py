@@ -6,6 +6,7 @@ from unittest.mock import patch
 from typer.testing import CliRunner
 
 from sybl.cli import app
+from sybl.cli import exit_codes as ec
 
 runner = CliRunner()
 
@@ -78,14 +79,14 @@ def test_doctor_runs() -> None:
 def test_status_when_daemon_down() -> None:
     with patch("sybl.cli.status.is_daemon_running", return_value=False):
         result = runner.invoke(app, ["status"])
-    assert result.exit_code == 1
+    assert result.exit_code == ec.DAEMON_NOT_RUNNING
     assert "not running" in (result.stdout + result.stderr).lower()
 
 
 def test_tui_requires_daemon() -> None:
     with patch("sybl.cli.tui.is_daemon_running", return_value=False):
         result = runner.invoke(app, ["tui"])
-    assert result.exit_code == 1
+    assert result.exit_code == ec.DAEMON_NOT_RUNNING
     assert "not running" in (result.stdout + result.stderr).lower()
 
 

@@ -80,4 +80,4 @@ async def _run_test(hotkey_config) -> None:
 
 
 def register(app: typer.Typer) -> None:
-    app.add_typer(hotkey_app, name="hotkey")
+    app.add_typer(hotkey_app, name="hotkey", rich_help_panel="Dictation")

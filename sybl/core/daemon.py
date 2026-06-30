@@ -120,7 +120,15 @@ class SyblDaemon:
             self._sound_cue.play_start()
             if self._level_task is None or self._level_task.done():
                 self._level_task = asyncio.create_task(self._poll_levels())
-        else:
+        elif state in (SessionState.PROCESSING, SessionState.INJECTING):
+            self._indicator.set_phase("processing")
+            if self._level_task is not None and not self._level_task.done():
+                self._level_task.cancel()
+        elif state in (
+            SessionState.IDLE,
+            SessionState.CANCELLED,
+            SessionState.ERROR,
+        ):
             self._indicator.hide()
             if self._level_task is not None and not self._level_task.done():
                 self._level_task.cancel()

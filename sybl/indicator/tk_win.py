@@ -77,6 +77,9 @@ class TkCaptureIndicator:
         x, y = clamp_to_screen(x, y, self._config.size_px, self._bar_height())
         self._commands.put(_Command(_CmdKind.LEVEL, level=clamped, x=x, y=y))
 
+    def set_phase(self, phase: str) -> None:
+        return None
+
     def shutdown(self) -> None:
         if self._failed.is_set():
             return

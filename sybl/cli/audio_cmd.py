@@ -144,4 +144,4 @@ async def _record(
 
 
 def register(app: typer.Typer) -> None:
-    app.add_typer(audio_app, name="audio")
+    app.add_typer(audio_app, name="audio", rich_help_panel="Dictation")

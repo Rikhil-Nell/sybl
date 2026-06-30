@@ -166,4 +166,4 @@ async def _transcribe(
 
 
 def register(app: typer.Typer) -> None:
-    app.add_typer(transcribe_app, name="transcribe")
+    app.add_typer(transcribe_app, name="transcribe", rich_help_panel="Dictation")

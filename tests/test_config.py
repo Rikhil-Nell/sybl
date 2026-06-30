@@ -34,8 +34,9 @@ def test_defaults_validate() -> None:
     assert config.voice_commands.enabled is True
     assert config.indicator.enabled is True
     assert config.indicator.strategy == "overlay"
-    assert config.indicator.size_px == 48
+    assert config.indicator.size_px == 72
     assert config.ui.onboarding_complete is False
+    assert config.ui.first_run_shown is False
 
 
 def test_load_returns_defaults_when_missing(tmp_config_path: Path) -> None:

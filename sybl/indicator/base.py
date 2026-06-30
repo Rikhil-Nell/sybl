@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Protocol
+from typing import Literal, Protocol
+
+IndicatorPhase = Literal["listening", "processing"]
 
 
 class CaptureIndicator(Protocol):
@@ -11,5 +13,7 @@ class CaptureIndicator(Protocol):
     def hide(self) -> None: ...
 
     def update_level(self, level: float) -> None: ...
+
+    def set_phase(self, phase: IndicatorPhase) -> None: ...
 
     def shutdown(self) -> None: ...

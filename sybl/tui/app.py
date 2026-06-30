@@ -71,6 +71,16 @@ class SyblTuiApp(App):
         self._listening_started_at: float | None = None
         self._last_status: dict = {}
         self._elapsed_timer: asyncio.TimerHandle | None = None
+        self._demo_indicator = None
+
+    def action_quit(self) -> None:
+        self._shutdown_demo_indicator()
+        self.exit()
+
+    def _shutdown_demo_indicator(self) -> None:
+        if self._demo_indicator is not None:
+            self._demo_indicator.shutdown()
+            self._demo_indicator = None
 
     def compose(self) -> ComposeResult:
         yield from ()
@@ -86,6 +96,20 @@ class SyblTuiApp(App):
             await self._maybe_show_onboarding()
         self.run_worker(self._event_loop(), exclusive=False, thread=False)
         await self.refresh_dashboard()
+        if self.demo:
+            await self._start_demo_indicator()
+
+    async def _start_demo_indicator(self) -> None:
+        from sybl.config import ConfigManager
+        from sybl.tui.demo_indicator import DemoIndicatorBridge
+
+        config = ConfigManager().load()
+        self._demo_indicator = DemoIndicatorBridge(config)
+        if self._demo_indicator.active:
+            status = self._last_status or await self.ipc.get_status()
+            state = status.get("state", "idle")
+            if isinstance(state, str):
+                self._demo_indicator.on_state(state)
 
     def action_open_help(self) -> None:
         self.push_screen(HelpScreen())
@@ -356,12 +380,18 @@ class SyblTuiApp(App):
                 status["state"] = new_state
                 self._last_status = status
                 self._update_dashboard_shell(status=status)
+                if self.demo and self._demo_indicator is not None:
+                    self._demo_indicator.on_state(new_state)
             self.run_worker(self.refresh_dashboard(), exclusive=False)
         elif event_type == "level":
             value = payload.get("value")
             hero = self._dashboard_widget("#hero-band", HeroBand)
             if isinstance(value, (int, float)) and isinstance(hero, HeroBand):
                 hero.update_meter(float(value))
+            if self.demo and self._demo_indicator is not None and isinstance(
+                value, (int, float)
+            ):
+                self._demo_indicator.on_level(float(value))
         elif event_type == "log_entry":
             entry = payload.get("entry", {})
             log_band = self._dashboard_widget("#log-band", LogBand)
